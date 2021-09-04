@@ -1,5 +1,5 @@
 // @ts-check
-const fs = require("fs/promises");
+const fs = require("fs").promises;
 const { join, dirname } = require("path");
 
 /**
