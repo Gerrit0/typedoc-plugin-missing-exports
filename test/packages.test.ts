@@ -154,6 +154,25 @@ test("Excluded non-exported", (t) => {
     t.is(missing.size, 1);
 });
 
+test("Missing declaration", (t) => {
+    const entry: DocumentationEntryPoint = {
+        displayName: "decl",
+        program,
+        sourceFile: program.getSourceFile(
+            join(__dirname, "packages/missing-declaration/index.ts")
+        )!,
+    };
+
+    const project = app.converter.convert([entry]);
+    const internals = project.children?.find((x) => x.name === "<internal>");
+    t.truthy(internals, "No internals namespace created");
+
+    t.deepEqual(
+        internals?.children?.map((c) => c.name),
+        ["Options"]
+    );
+});
+
 test.serial("Custom namespace name", (t) => {
     const entry: DocumentationEntryPoint = {
         displayName: "single",

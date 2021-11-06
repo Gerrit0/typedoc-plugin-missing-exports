@@ -83,7 +83,9 @@ function onResolveBegin(
 
         do {
             for (const s of missing) {
-                internalContext.converter.convertSymbol(internalContext, s);
+                if (shouldConvertSymbol(s, context.checker)) {
+                    internalContext.converter.convertSymbol(internalContext, s);
+                }
                 tried.add(s);
             }
 
@@ -177,4 +179,18 @@ export function discoverMissingExports(root: Reflection): Set<ts.Symbol> {
     } while ((current = queue.shift()));
 
     return missing;
+}
+
+function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
+    while (symbol.flags & ts.SymbolFlags.Alias) {
+        symbol = checker.getAliasedSymbol(symbol);
+    }
+
+    // We're looking at an unknown symbol which is declared in some package without
+    // type declarations. We know nothing about it, so don't convert it.
+    if (symbol.name === "unknown" && symbol.flags & ts.SymbolFlags.Transient) {
+        return false;
+    }
+
+    return true;
 }
