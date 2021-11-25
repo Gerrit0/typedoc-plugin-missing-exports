@@ -188,7 +188,7 @@ function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
 
     // We're looking at an unknown symbol which is declared in some package without
     // type declarations. We know nothing about it, so don't convert it.
-    if (symbol.name === "unknown" && symbol.flags & ts.SymbolFlags.Transient) {
+    if (symbol.flags & ts.SymbolFlags.Transient) {
         return false;
     }
 
