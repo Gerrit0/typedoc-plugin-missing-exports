@@ -192,5 +192,12 @@ function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
         return false;
     }
 
+    // This is something inside the special Node `Globals` interface. Don't convert it
+    // because TypeDoc will reasonably assert that "Property" means that a symbol should be
+    // inside something that can have properties.
+    if (symbol.flags & ts.SymbolFlags.Property) {
+        return false;
+    }
+
     return true;
 }
