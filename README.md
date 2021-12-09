@@ -10,6 +10,11 @@ For libraries which export their full exposed API, this works well, but some pac
 
 If your project references classes which are built into the language (e.g. `HTMLElement`), this package _will_ result in those types being documented to. If you want to prevent this, set TypeDoc's `excludeExternals` option to `true`. The default pattern for determining if a symbol is external will exclude everything within `node_modules`.
 
+### Usage
+  `npm install typedoc-plugin-missing-exports`
+
+  Typedoc will automatically use this plugin when present.
+
 ### Options
 
 -   `internalNamespace` - Define the name of the namespace that internal symbols which are not exported should be placed into.
