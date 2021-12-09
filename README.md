@@ -13,7 +13,7 @@ If your project references classes which are built into the language (e.g. `HTML
 ### Usage
   `npm install typedoc-plugin-missing-exports`
 
-  Typedoc will automatically use this plugin when present.
+  TypeDoc will automatically use this plugin when present.
 
 ### Options
 
