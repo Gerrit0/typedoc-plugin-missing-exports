@@ -39,5 +39,5 @@ jobs:
               if: steps.check.outputs.changed == 'true'
               run: |
                   yarn publish --non-interactive
-                  git tag v$(jq '.version' package.json)
+                  git tag v$(jq '.version' package.json -r)
                   git push --tags
