@@ -73,7 +73,7 @@ function onResolveBegin(
                     "internalNamespace"
                 )
             );
-        context.finalizeDeclarationReflection(internalNs, void 0);
+        context.finalizeDeclarationReflection(internalNs);
         const internalContext = context.withScope(internalNs);
 
         // Keep track of which symbols we've tried to convert. If they don't get converted
