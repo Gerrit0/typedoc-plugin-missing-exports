@@ -202,9 +202,9 @@ test.serial("Custom namespace name", (t) => {
         )!,
     };
 
-    app.options.setValue("internalNamespace", "internals");
+    app.options.setValue("internalModule", "internals");
     const project = app.converter.convert([entry]);
-    app.options.reset("internalNamespace");
+    app.options.reset("internalModule");
 
     t.deepEqual(
         project.children?.map((c) => c.name),
