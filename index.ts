@@ -16,14 +16,14 @@ import {
 
 declare module "typedoc" {
     export interface TypeDocOptionMap {
-        internalNamespace: string;
+        internalModule: string;
     }
 }
 
 export function load(app: Application) {
     app.options.addDeclaration({
-        name: "internalNamespace",
-        help: "Define the name of the namespace that internal symbols which are not exported should be placed into.",
+        name: "internalModule",
+        help: "Define the name of the module that internal symbols which are not exported should be placed into.",
         defaultValue: "<internal>",
     });
 
@@ -66,12 +66,10 @@ function onResolveBegin(
         const internalNs = context
             .withScope(mod)
             .createDeclarationReflection(
-                ReflectionKind.Namespace,
+                ReflectionKind.Module,
                 void 0,
                 void 0,
-                context.converter.application.options.getValue(
-                    "internalNamespace"
-                )
+                context.converter.application.options.getValue("internalModule")
             );
         context.finalizeDeclarationReflection(internalNs);
         const internalContext = context.withScope(internalNs);
@@ -195,7 +193,7 @@ function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
     // This is something inside the special Node `Globals` interface. Don't convert it
     // because TypeDoc will reasonably assert that "Property" means that a symbol should be
     // inside something that can have properties.
-    if (symbol.flags & ts.SymbolFlags.Property) {
+    if (symbol.flags & ts.SymbolFlags.Property && symbol.name !== "default") {
         return false;
     }
 

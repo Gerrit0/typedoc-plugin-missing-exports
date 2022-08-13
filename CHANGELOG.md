@@ -1,3 +1,8 @@
+### 1.0.0 (2022-08-12)
+
+-   BREAKING: Will now create an `<internals>`**module** rather than a **namespace** to allow support for referenced default exports, #15.
+-   BREAKING: Renamed `internalNamespace` option to `internalModule`
+
 ### 0.23.0 (2022-06-26)
 
 -   Add support for TypeDoc 0.23.x

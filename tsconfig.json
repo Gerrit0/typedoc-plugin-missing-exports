@@ -9,5 +9,5 @@
         "sourceMap": true
     },
     "include": ["."],
-    "exclude": ["test/packages"]
+    "exclude": ["test/packages", "dist/"]
 }

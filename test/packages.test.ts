@@ -173,6 +173,26 @@ test("Missing declaration", (t) => {
     );
 });
 
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/15
+test("Issue #15", (t) => {
+    const entry: DocumentationEntryPoint = {
+        displayName: "gh15",
+        program,
+        sourceFile: program.getSourceFile(
+            join(__dirname, "packages/gh15/index.ts")
+        )!,
+    };
+
+    const project = app.converter.convert([entry]);
+    const internals = project.children?.find((x) => x.name === "<internal>");
+    t.truthy(internals, "No internals namespace created");
+
+    t.deepEqual(
+        internals?.children?.map((c) => c.name),
+        ["default"]
+    );
+});
+
 test.serial("Custom namespace name", (t) => {
     const entry: DocumentationEntryPoint = {
         displayName: "single",
