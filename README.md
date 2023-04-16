@@ -2,7 +2,7 @@
 
 Automatically document symbols which aren't exported but are referenced.
 
-> Supports TypeDoc 0.22.x and 0.23.x
+> Supports TypeDoc 0.24.x
 
 TypeDoc 0.20 switched from documenting each file individually to documenting based on entry points. TypeDoc looks at each provided entry point and documents all exports from that entry point.
 
@@ -12,9 +12,10 @@ If your project references classes which are built into the language (e.g. `HTML
 
 ### Usage
 
-`npm install typedoc-plugin-missing-exports`
-
-TypeDoc will automatically use this plugin when present.
+```bash
+npm install typedoc-plugin-missing-exports
+npx typedoc --plugin typedoc-plugin-missing-exports
+```
 
 ### Options
 

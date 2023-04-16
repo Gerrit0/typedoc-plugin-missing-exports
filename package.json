@@ -8,10 +8,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.11.10",
-    "ava": "^4.3.0",
-    "prettier": "^2.7.1",
-    "typedoc": "^0.23.1",
-    "typescript": "^4.7.4"
+    "prettier": "^2.8.7",
+    "typedoc": "^0.24.2",
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   },
   "repository": {
     "type": "git",
@@ -24,16 +24,10 @@
     "typedoc-plugin"
   ],
   "peerDependencies": {
-    "typedoc": "0.22.x || 0.23.x"
+    "typedoc": "0.24.x"
   },
   "scripts": {
-    "pretest": "node scripts/copy_test_files.js",
-    "test": "ava",
+    "test": "vitest run",
     "build": "tsc"
-  },
-  "ava": {
-    "files": [
-      "test/**/*.test.js"
-    ]
   }
 }

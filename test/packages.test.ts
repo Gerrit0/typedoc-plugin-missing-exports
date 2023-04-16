@@ -6,24 +6,24 @@ import {
     LogLevel,
     TSConfigReader,
 } from "typedoc";
-import test from "ava";
-import { discoverMissingExports } from "..";
+import { test, expect } from "vitest";
+import { load } from "..";
 
 const app = new Application();
 app.options.addReader(new TSConfigReader());
 app.bootstrap({
     tsconfig: join(__dirname, "packages", "tsconfig.json"),
-    plugin: [join(__dirname, "..", "index.js")],
     excludeExternals: true,
     logLevel: LogLevel.Warn,
 });
+load(app);
 
 const program = ts.createProgram(
     app.options.getFileNames(),
     app.options.getCompilerOptions()
 );
 
-test("No missing exports", (t) => {
+test("No missing exports", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "none",
         program,
@@ -34,13 +34,10 @@ test("No missing exports", (t) => {
 
     const project = app.converter.convert([entry]);
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["foo"]
-    );
+    expect(project.children?.map((c) => c.name)).toEqual(["foo"]);
 });
 
-test("Single missing export", (t) => {
+test("Single missing export", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "single",
         program,
@@ -51,19 +48,13 @@ test("Single missing export", (t) => {
 
     const project = app.converter.convert([entry]);
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["<internal>", "foo"]
-    );
+    expect(project.children?.map((c) => c.name)).toEqual(["<internal>", "foo"]);
 
     const internal = project.children?.find((c) => c.name === "<internal>");
-    t.deepEqual(
-        internal?.children?.map((c) => c.name),
-        ["FooType"]
-    );
+    expect(internal?.children?.map((c) => c.name)).toEqual(["FooType"]);
 });
 
-test("Nested missing export", (t) => {
+test("Nested missing export", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "nested",
         program,
@@ -74,19 +65,13 @@ test("Nested missing export", (t) => {
 
     const project = app.converter.convert([entry]);
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["<internal>", "foo"]
-    );
+    expect(project.children?.map((c) => c.name)).toEqual(["<internal>", "foo"]);
 
     const internal = project.children?.find((c) => c.name === "<internal>");
-    t.deepEqual(
-        internal?.children?.map((c) => c.name),
-        ["Bar", "Foo"]
-    );
+    expect(internal?.children?.map((c) => c.name)).toEqual(["Bar", "Foo"]);
 });
 
-test("Multiple entry points", (t) => {
+test("Multiple entry points", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "a",
         program,
@@ -104,37 +89,22 @@ test("Multiple entry points", (t) => {
 
     const project = app.converter.convert([entry, entry2]);
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["a", "b"]
-    );
+    expect(project.children?.map((c) => c.name)).toEqual(["a", "b"]);
 
     const a = project.children?.find((c) => c.name === "a");
-    t.deepEqual(
-        a?.children?.map((c) => c.name),
-        ["<internal>", "aFn"]
-    );
+    expect(a?.children?.map((c) => c.name)).toEqual(["<internal>", "aFn"]);
 
     const aInternal = a?.children?.find((c) => c.name === "<internal>");
-    t.deepEqual(
-        aInternal?.children?.map((c) => c.name),
-        ["FooNum"]
-    );
+    expect(aInternal?.children?.map((c) => c.name)).toEqual(["FooNum"]);
 
     const b = project.children?.find((c) => c.name === "b");
-    t.deepEqual(
-        b?.children?.map((c) => c.name),
-        ["<internal>", "bFn"]
-    );
+    expect(b?.children?.map((c) => c.name)).toEqual(["<internal>", "bFn"]);
 
     const bInternal = b?.children?.find((c) => c.name === "<internal>");
-    t.deepEqual(
-        bInternal?.children?.map((c) => c.name),
-        ["Bar", "Foo"]
-    );
+    expect(bInternal?.children?.map((c) => c.name)).toEqual(["Bar", "Foo"]);
 });
 
-test("Excluded non-exported", (t) => {
+test("Excluded non-exported", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "excluded",
         program,
@@ -145,16 +115,10 @@ test("Excluded non-exported", (t) => {
 
     const project = app.converter.convert([entry]);
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["foo"]
-    );
-
-    const missing = discoverMissingExports(project);
-    t.is(missing.size, 1);
+    expect(project.children?.map((c) => c.name)).toEqual(["foo"]);
 });
 
-test("Missing declaration", (t) => {
+test("Missing declaration", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "decl",
         program,
@@ -165,16 +129,13 @@ test("Missing declaration", (t) => {
 
     const project = app.converter.convert([entry]);
     const internals = project.children?.find((x) => x.name === "<internal>");
-    t.truthy(internals, "No internals namespace created");
+    expect(internals).toBeDefined();
 
-    t.deepEqual(
-        internals?.children?.map((c) => c.name),
-        ["Options"]
-    );
+    expect(internals?.children?.map((c) => c.name)).toEqual(["Options"]);
 });
 
 // https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/15
-test("Issue #15", (t) => {
+test("Issue #15", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "gh15",
         program,
@@ -185,15 +146,12 @@ test("Issue #15", (t) => {
 
     const project = app.converter.convert([entry]);
     const internals = project.children?.find((x) => x.name === "<internal>");
-    t.truthy(internals, "No internals namespace created");
+    expect(internals).toBeDefined();
 
-    t.deepEqual(
-        internals?.children?.map((c) => c.name),
-        ["default"]
-    );
+    expect(internals?.children?.map((c) => c.name)).toEqual(["default"]);
 });
 
-test.serial("Custom namespace name", (t) => {
+test("Custom namespace name", () => {
     const entry: DocumentationEntryPoint = {
         displayName: "single",
         program,
@@ -206,8 +164,5 @@ test.serial("Custom namespace name", (t) => {
     const project = app.converter.convert([entry]);
     app.options.reset("internalModule");
 
-    t.deepEqual(
-        project.children?.map((c) => c.name),
-        ["internals", "foo"]
-    );
+    expect(project.children?.map((c) => c.name)).toEqual(["internals", "foo"]);
 });

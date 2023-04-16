@@ -5,6 +5,8 @@
         "isolatedModules": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "strict": true,
         "sourceMap": true
     },

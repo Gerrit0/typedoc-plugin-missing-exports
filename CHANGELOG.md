@@ -1,3 +1,7 @@
+### 2.0.0 (2023-04-15)
+
+-   BREAKING: Drop support for TypeDoc 0.22 and 0.23
+
 ### 1.0.0 (2022-08-12)
 
 -   BREAKING: Will now create an `<internals>`**module** rather than a **namespace** to allow support for referenced default exports, #15.
