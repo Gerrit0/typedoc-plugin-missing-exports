@@ -27,7 +27,7 @@
     "typedoc": "0.24.x"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run test/packages.test.ts",
     "build": "tsc"
   }
 }
