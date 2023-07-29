@@ -22,7 +22,7 @@ let hasMonkeyPatched = false;
 export function load(app: Application) {
     if (hasMonkeyPatched) {
         throw new Error(
-            "typedoc-plugin-missing-exports cannot be loaded multiple times"
+            "typedoc-plugin-missing-exports cannot be loaded multiple times",
         );
     }
     hasMonkeyPatched = true;
@@ -34,7 +34,7 @@ export function load(app: Application) {
 
     function discoverMissingExports(
         context: Context,
-        program: ts.Program
+        program: ts.Program,
     ): Set<ts.Symbol> {
         // An export is missing if if was referenced
         // Is not contained in the documented
@@ -82,7 +82,7 @@ export function load(app: Application) {
                 knownPrograms.set(refl, context.program);
                 activeReflection = refl;
             }
-        }
+        },
     );
 
     app.converter.on(
@@ -113,8 +113,8 @@ export function load(app: Application) {
                         void 0,
                         void 0,
                         context.converter.application.options.getValue(
-                            "internalModule"
-                        )
+                            "internalModule",
+                        ),
                     );
                 context.finalizeDeclarationReflection(internalNs);
                 const internalContext = context.withScope(internalNs);
@@ -129,7 +129,7 @@ export function load(app: Application) {
                         if (shouldConvertSymbol(s, context.checker)) {
                             internalContext.converter.convertSymbol(
                                 internalContext,
-                                s
+                                s,
                             );
                         }
                         tried.add(s);
@@ -151,9 +151,10 @@ export function load(app: Application) {
 
             knownPrograms.clear();
             referencedSymbols.clear();
+            symbolToActiveRefl.clear();
         },
         void 0,
-        1e9
+        1e9,
     );
 }
 function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
