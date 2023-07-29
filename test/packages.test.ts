@@ -21,7 +21,7 @@ load(app);
 
 const program = ts.createProgram(
     app.options.getFileNames(),
-    app.options.getCompilerOptions()
+    app.options.getCompilerOptions(),
 );
 
 test("No missing exports", () => {
@@ -29,7 +29,7 @@ test("No missing exports", () => {
         displayName: "none",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/no-missing-exports/index.ts")
+            join(__dirname, "packages/no-missing-exports/index.ts"),
         )!,
     };
 
@@ -43,7 +43,7 @@ test("Single missing export", () => {
         displayName: "single",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/single-missing-export/index.ts")
+            join(__dirname, "packages/single-missing-export/index.ts"),
         )!,
     };
 
@@ -60,7 +60,7 @@ test("Nested missing export", () => {
         displayName: "nested",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/nested-missing-export/index.ts")
+            join(__dirname, "packages/nested-missing-export/index.ts"),
         )!,
     };
 
@@ -77,14 +77,14 @@ test("Multiple entry points", () => {
         displayName: "a",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/multi-entry/a.ts")
+            join(__dirname, "packages/multi-entry/a.ts"),
         )!,
     };
     const entry2: DocumentationEntryPoint = {
         displayName: "b",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/multi-entry/b.ts")
+            join(__dirname, "packages/multi-entry/b.ts"),
         )!,
     };
 
@@ -110,7 +110,7 @@ test("Excluded non-exported", () => {
         displayName: "excluded",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/excluded/index.ts")
+            join(__dirname, "packages/excluded/index.ts"),
         )!,
     };
 
@@ -124,7 +124,7 @@ test("Missing declaration", () => {
         displayName: "decl",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/missing-declaration/index.ts")
+            join(__dirname, "packages/missing-declaration/index.ts"),
         )!,
     };
 
@@ -141,7 +141,7 @@ test("Issue #15", () => {
         displayName: "gh15",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/gh15/index.ts")
+            join(__dirname, "packages/gh15/index.ts"),
         )!,
     };
 
@@ -157,7 +157,7 @@ test("Custom namespace name", () => {
         displayName: "single",
         program,
         sourceFile: program.getSourceFile(
-            join(__dirname, "packages/single-missing-export/index.ts")
+            join(__dirname, "packages/single-missing-export/index.ts"),
         )!,
     };
 
