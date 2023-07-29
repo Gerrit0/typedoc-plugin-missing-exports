@@ -14,6 +14,7 @@ app.options.addReader(new TSConfigReader());
 app.bootstrap({
     tsconfig: join(__dirname, "packages", "tsconfig.json"),
     excludeExternals: true,
+    excludeInternal: true,
     logLevel: LogLevel.Warn,
 });
 load(app);
