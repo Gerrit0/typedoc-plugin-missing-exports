@@ -6,23 +6,29 @@ import {
     LogLevel,
     TSConfigReader,
 } from "typedoc";
-import { test, expect } from "vitest";
+import { test, expect, beforeAll } from "vitest";
 import { load } from "..";
 
-const app = new Application();
-app.options.addReader(new TSConfigReader());
-app.bootstrap({
-    tsconfig: join(__dirname, "packages", "tsconfig.json"),
-    excludeExternals: true,
-    excludeInternal: true,
-    logLevel: LogLevel.Warn,
-});
-load(app);
+let app: Application;
+let program: ts.Program;
 
-const program = ts.createProgram(
-    app.options.getFileNames(),
-    app.options.getCompilerOptions(),
-);
+beforeAll(async () => {
+    app = await Application.bootstrap(
+        {
+            tsconfig: join(__dirname, "packages", "tsconfig.json"),
+            excludeExternals: true,
+            excludeInternal: true,
+            logLevel: LogLevel.Warn,
+        },
+        [new TSConfigReader()],
+    );
+    load(app);
+
+    program = ts.createProgram(
+        app.options.getFileNames(),
+        app.options.getCompilerOptions(),
+    );
+});
 
 test("No missing exports", () => {
     const entry: DocumentationEntryPoint = {

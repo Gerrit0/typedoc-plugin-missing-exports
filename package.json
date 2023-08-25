@@ -1,6 +1,6 @@
 {
   "name": "typedoc-plugin-missing-exports",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Include non-exported types in TypeDoc documentation",
   "main": "./index.js",
   "exports": "./index.js",
@@ -9,8 +9,8 @@
   "devDependencies": {
     "@types/node": "16",
     "prettier": "3.0.0",
-    "typedoc": "^0.24.8",
-    "typescript": "^5.1.6",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.2.2",
     "vitest": "^0.33.0"
   },
   "repository": {
@@ -24,7 +24,7 @@
     "typedoc-plugin"
   ],
   "peerDependencies": {
-    "typedoc": "0.24.x"
+    "typedoc": "0.24.x || 0.25.x"
   },
   "scripts": {
     "test": "vitest run test/packages.test.ts",

@@ -1,3 +1,7 @@
+### 2.0.2 (2023-08-25)
+
+-   Added support for TypeDoc 0.25.x
+
 ### 2.0.1 (2023-07-29)
 
 -   Fixed memory leak when running in watch mode / packages mode, TypeStrong/typedoc#2339
