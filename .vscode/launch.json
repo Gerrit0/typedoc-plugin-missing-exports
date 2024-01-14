@@ -1,0 +1,21 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Attach",
+			"port": 9229,
+			"request": "attach",
+			"internalConsoleOptions": "openOnSessionStart",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node",
+			"sourceMaps": true,
+			"resolveSourceMapLocations": [
+				// "${workspaceFolder}/**",
+				"!**/node_modules/**"
+			],
+			"sourceMapPathOverrides": {
+				"typedoc-plugin-missing-exports://*": "${workspaceFolder}/*"
+			}
+		}
+	]
+}

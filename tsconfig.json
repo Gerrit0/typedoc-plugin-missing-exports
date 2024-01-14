@@ -9,6 +9,7 @@
 		"noUnusedParameters": true,
 		"strict": true,
 		"sourceMap": true,
+		"sourceRoot": "typedoc-plugin-missing-exports://",
 		"skipLibCheck": true
 	},
 	"include": ["."],

@@ -28,6 +28,7 @@
   },
   "scripts": {
     "test": "vitest run test/packages.test.ts",
+    "test:doc": "typedoc --plugin ./index.js --tsconfig ./test/packages",
     "build": "tsc"
   }
 }
