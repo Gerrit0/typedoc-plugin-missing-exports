@@ -1,7 +1,7 @@
 {
-    "files.exclude": {
-        "*.js": true,
-        "test/*.js": true,
-        "**/*.js.map": true
-    }
+	"files.exclude": {
+		"*.js": true,
+		"test/*.js": true,
+		"**/*.js.map": true
+	}
 }

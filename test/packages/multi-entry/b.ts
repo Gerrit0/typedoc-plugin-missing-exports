@@ -1,11 +1,11 @@
 export function bFn() {
-    return new Foo();
+	return new Foo();
 }
 
 class Foo {
-    bar?: Bar;
+	bar?: Bar;
 }
 
 class Bar {
-    readonly isBar = true;
+	readonly isBar = true;
 }

@@ -19,8 +19,8 @@ npx typedoc --plugin typedoc-plugin-missing-exports
 
 ### Options
 
--   `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into.
+- `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into.
 
 ### Additional Reading
 
--   https://github.com/TypeStrong/typedoc/issues/1657
+- https://github.com/TypeStrong/typedoc/issues/1657

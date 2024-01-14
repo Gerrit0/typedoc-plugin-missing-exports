@@ -11,17 +11,17 @@ export declare function foo(): Foo;
 
 /** First level deep */
 class Foo {
-    bar?: Bar;
-    baz?: Baz;
+	bar?: Bar;
+	baz?: Baz;
 }
 
 /** Second level deep */
 class Bar {
-    /** @internal */
-    readonly isBar = true;
+	/** @internal */
+	readonly isBar = true;
 }
 
 /** @internal */
 class Baz {
-    readonly isBaz = true;
+	readonly isBaz = true;
 }

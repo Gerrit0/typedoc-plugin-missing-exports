@@ -8,7 +8,7 @@
  * This type is properly exported.
  */
 export function foo(): FooType {
-    return 123;
+	return 123;
 }
 
 /**

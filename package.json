@@ -2,16 +2,16 @@
   "name": "typedoc-plugin-missing-exports",
   "version": "2.1.0",
   "description": "Include non-exported types in TypeDoc documentation",
-  "main": "./index.js",
   "exports": "./index.js",
+  "type": "module",
   "author": "Gerrit Birkeland",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "16",
-    "prettier": "3.0.0",
-    "typedoc": "^0.25.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.33.0"
+    "@types/node": "18",
+    "prettier": "3.2.1",
+    "typedoc": "^0.25.7",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
   },
   "repository": {
     "type": "git",

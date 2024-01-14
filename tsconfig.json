@@ -1,16 +1,16 @@
 {
-    "compilerOptions": {
-        "target": "es2020",
-        "module": "commonjs",
-        "isolatedModules": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "strict": true,
-        "sourceMap": true,
-        "skipLibCheck": true
-    },
-    "include": ["."],
-    "exclude": ["test/packages", "dist/"]
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "Node16",
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strict": true,
+		"sourceMap": true,
+		"skipLibCheck": true
+	},
+	"include": ["."],
+	"exclude": ["test/packages", "dist/"]
 }
