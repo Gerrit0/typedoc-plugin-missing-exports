@@ -8,11 +8,14 @@ import {
 	Reflection,
 	DeclarationReflection,
 	ProjectReflection,
+	ParameterType,
+	ContainerReflection,
 } from "typedoc";
 
 declare module "typedoc" {
 	export interface TypeDocOptionMap {
 		internalModule: string;
+		placeInternalsInOwningModule: boolean;
 	}
 
 	export interface Reflection {
@@ -64,12 +67,6 @@ export function load(app: Application) {
 	const origCreateSymbolReference = ReferenceType.createSymbolReference;
 	ReferenceType.createSymbolReference = function (symbol, context, name) {
 		const owningModule = getOwningModule(context);
-		console.log(
-			"Created ref",
-			symbol.name,
-			"owner",
-			owningModule.getFullName(),
-		);
 		const set = referencedSymbols.get(context.program);
 		symbolToOwningModule.set(symbol, owningModule);
 		if (set) {
@@ -82,8 +79,26 @@ export function load(app: Application) {
 
 	app.options.addDeclaration({
 		name: "internalModule",
-		help: "Define the name of the module that internal symbols which are not exported should be placed into.",
+		help: "[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
 		defaultValue: "<internal>",
+	});
+
+	app.options.addDeclaration({
+		name: "placeInternalsInOwningModule",
+		help: "[typedoc-plugin-missing-exports] If set internal symbols will not be placed into an internals module, but directly into the module which references them.",
+		defaultValue: false,
+		type: ParameterType.Boolean,
+	});
+
+	app.converter.on(Converter.EVENT_BEGIN, () => {
+		if (
+			app.options.getValue("placeInternalsInOwningModule") &&
+			app.options.isSet("internalModule")
+		) {
+			app.logger.warn(
+				`[typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.`,
+			);
+		}
 	});
 
 	app.converter.on(
@@ -115,17 +130,22 @@ export function load(app: Application) {
 				// Nasty hack here that will almost certainly break in future TypeDoc versions.
 				context.setActiveProgram(program);
 
-				const internalNs = context
-					.withScope(mod)
-					.createDeclarationReflection(
-						ReflectionKind.Module,
-						void 0,
-						void 0,
-						context.converter.application.options.getValue("internalModule"),
-					);
-				internalNs[InternalModule] = true;
-				context.finalizeDeclarationReflection(internalNs);
-				const internalContext = context.withScope(internalNs);
+				let internalContext: Context;
+				if (app.options.getValue("placeInternalsInOwningModule")) {
+					internalContext = context.withScope(mod);
+				} else {
+					const internalNs = context
+						.withScope(mod)
+						.createDeclarationReflection(
+							ReflectionKind.Module,
+							void 0,
+							void 0,
+							app.options.getValue("internalModule"),
+						);
+					internalNs[InternalModule] = true;
+					context.finalizeDeclarationReflection(internalNs);
+					internalContext = context.withScope(internalNs);
+				}
 
 				// Keep track of which symbols we've tried to convert. If they don't get converted
 				// when calling convertSymbol, then the user has excluded them somehow, don't go into
@@ -146,9 +166,12 @@ export function load(app: Application) {
 					}
 				} while (missing.size > 0);
 
-				// All the missing symbols were excluded, so get rid of our namespace.
-				if (!internalNs.children?.length) {
-					context.project.removeReflection(internalNs);
+				// If we added a module and all the missing symbols were excluded, get rid of our namespace.
+				if (
+					internalContext.scope[InternalModule] &&
+					!(internalContext.scope as ContainerReflection).children?.length
+				) {
+					context.project.removeReflection(internalContext.scope);
 				}
 
 				context.setActiveProgram(void 0);

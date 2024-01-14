@@ -5,15 +5,17 @@ import {
 	Application,
 	ContainerReflection,
 	LogLevel,
+	Logger,
 	Reflection,
 	ReflectionKind,
 	TSConfigReader,
 } from "typedoc";
-import { test, expect, beforeAll } from "vitest";
+import { test, expect, beforeAll, afterEach } from "vitest";
 import { load } from "../index.js";
 
 let app: Application;
 let program: ts.Program;
+let logger: TestLogger;
 
 function toStringHierarchy(refl: Reflection, indent = 0) {
 	const text: string[] = [];
@@ -38,6 +40,19 @@ function toStringHierarchy(refl: Reflection, indent = 0) {
 	return text.join("\n");
 }
 
+class TestLogger extends Logger {
+	messages: string[] = [];
+	log(message: string, level: LogLevel): void {
+		if (level === LogLevel.Verbose) return;
+		this.messages.push(`${LogLevel[level]}: ${message}`);
+	}
+
+	expectMessage(message: string) {
+		expect(this.messages).toContain(message);
+		this.messages.splice(this.messages.indexOf(message), 1);
+	}
+}
+
 beforeAll(async () => {
 	app = await Application.bootstrap(
 		{
@@ -48,12 +63,21 @@ beforeAll(async () => {
 		},
 		[new TSConfigReader()],
 	);
+	app.logger = logger = new TestLogger();
 	load(app);
 
 	program = ts.createProgram(
 		app.options.getFileNames(),
 		app.options.getCompilerOptions(),
 	);
+});
+
+afterEach(() => {
+	app.options.reset("internalModule");
+	app.options.reset("placeInternalsInOwningModule");
+
+	expect(logger.messages).toEqual([]);
+	logger.messages = [];
 });
 
 function convert(...paths: string[]) {
@@ -167,7 +191,28 @@ test("Issue #22", () => {
 test("Custom module name", () => {
 	app.options.setValue("internalModule", "internals");
 	const project = convert("single-missing-export/index.ts");
-	app.options.reset("internalModule");
 
 	expect(project.children?.map((c) => c.name)).toEqual(["internals", "foo"]);
+});
+
+test("Disabling <internals> module, #16", () => {
+	app.options.setValue("placeInternalsInOwningModule", true);
+	const project = convert("single-missing-export/index.ts");
+
+	const hierarchy = outdent`
+		Type alias FooType
+		Function foo
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+});
+
+test("Disabling <internals> module but internalModule is set gives warning", () => {
+	app.options.setValue("placeInternalsInOwningModule", true);
+	app.options.setValue("internalModule", "internals");
+	convert("single-missing-export/index.ts");
+
+	logger.expectMessage(
+		"Warn: [typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.",
+	);
 });

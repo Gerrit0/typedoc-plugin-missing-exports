@@ -1,7 +1,8 @@
-### 2.1.1 (2024-01-14)
+### 2.2.0 (2024-01-14)
 
 - Fixed an issue where if a re-exported symbol referenced an internal symbol, and more than one entry point was provided to TypeDoc,
   this plugin would add the internal symbol to the last module, rather than the one it was associated with, #22.
+- Added `--placeInternalsInOwningModule` option.
 
 ### 2.1.0 (2023-08-25)
 
