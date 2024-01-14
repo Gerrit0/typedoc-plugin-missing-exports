@@ -8,6 +8,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "18",
+    "outdent": "^0.8.0",
     "prettier": "3.2.1",
     "typedoc": "^0.25.7",
     "typescript": "^5.3.3",

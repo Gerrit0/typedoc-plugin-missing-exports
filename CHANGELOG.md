@@ -1,3 +1,8 @@
+### 2.1.1 (2024-01-14)
+
+- Fixed an issue where if a re-exported symbol referenced an internal symbol, and more than one entry point was provided to TypeDoc,
+  this plugin would add the internal symbol to the last module, rather than the one it was associated with, #22.
+
 ### 2.1.0 (2023-08-25)
 
 - Added support for TypeDoc 0.25.x
@@ -12,7 +17,7 @@
 
 ### 1.0.0 (2022-08-12)
 
-- BREAKING: Will now create an `<internals>`**module** rather than a **namespace** to allow support for referenced default exports, #15.
+- BREAKING: Will now create an `<internals>` **module** rather than a **namespace** to allow support for referenced default exports, #15.
 - BREAKING: Renamed `internalNamespace` option to `internalModule`
 
 ### 0.23.0 (2022-06-26)

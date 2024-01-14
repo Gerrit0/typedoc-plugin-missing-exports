@@ -1,4 +1,3 @@
-import { ok } from "assert";
 import {
 	Application,
 	Context,
@@ -15,9 +14,16 @@ declare module "typedoc" {
 	export interface TypeDocOptionMap {
 		internalModule: string;
 	}
+
+	export interface Reflection {
+		[InternalModule]?: boolean;
+	}
 }
 
 let hasMonkeyPatched = false;
+const ModuleLike: ReflectionKind =
+	ReflectionKind.Project | ReflectionKind.Module;
+const InternalModule = Symbol();
 
 export function load(app: Application) {
 	if (hasMonkeyPatched) {
@@ -27,18 +33,17 @@ export function load(app: Application) {
 	}
 	hasMonkeyPatched = true;
 
-	let activeReflection: Reflection | undefined;
 	const referencedSymbols = new Map<ts.Program, Set<ts.Symbol>>();
-	const symbolToActiveRefl = new Map<ts.Symbol, Reflection>();
+	const symbolToOwningModule = new Map<ts.Symbol, Reflection>();
 	const knownPrograms = new Map<Reflection, ts.Program>();
 
 	function discoverMissingExports(
+		owningModule: Reflection,
 		context: Context,
 		program: ts.Program,
 	): Set<ts.Symbol> {
 		// An export is missing if if was referenced
 		// Is not contained in the documented
-		// And is "owned" by the active reflection
 		const referenced = referencedSymbols.get(program) || new Set();
 		const ownedByOther = new Set<ts.Symbol>();
 		referencedSymbols.set(program, ownedByOther);
@@ -46,7 +51,7 @@ export function load(app: Application) {
 		for (const s of [...referenced]) {
 			if (context.project.getReflectionFromSymbol(s)) {
 				referenced.delete(s);
-			} else if (symbolToActiveRefl.get(s) !== activeReflection) {
+			} else if (symbolToOwningModule.get(s) !== owningModule) {
 				referenced.delete(s);
 				ownedByOther.add(s);
 			}
@@ -58,9 +63,15 @@ export function load(app: Application) {
 	// Monkey patch the constructor for references so that we can get every
 	const origCreateSymbolReference = ReferenceType.createSymbolReference;
 	ReferenceType.createSymbolReference = function (symbol, context, name) {
-		ok(activeReflection, "active reflection has not been set");
+		const owningModule = getOwningModule(context);
+		console.log(
+			"Created ref",
+			symbol.name,
+			"owner",
+			owningModule.getFullName(),
+		);
 		const set = referencedSymbols.get(context.program);
-		symbolToActiveRefl.set(symbol, activeReflection);
+		symbolToOwningModule.set(symbol, owningModule);
 		if (set) {
 			set.add(symbol);
 		} else {
@@ -78,9 +89,8 @@ export function load(app: Application) {
 	app.converter.on(
 		Converter.EVENT_CREATE_DECLARATION,
 		(context: Context, refl: Reflection) => {
-			if (refl.kindOf(ReflectionKind.Project | ReflectionKind.Module)) {
+			if (refl.kindOf(ModuleLike)) {
 				knownPrograms.set(refl, context.program);
-				activeReflection = refl;
 			}
 		},
 	);
@@ -96,12 +106,11 @@ export function load(app: Application) {
 			}
 
 			for (const mod of modules) {
-				activeReflection = mod;
-
 				const program = knownPrograms.get(mod);
 				if (!program) continue;
-				let missing = discoverMissingExports(context, program);
-				if (!missing || !missing.size) continue;
+
+				let missing = discoverMissingExports(mod, context, program);
+				if (!missing.size) continue;
 
 				// Nasty hack here that will almost certainly break in future TypeDoc versions.
 				context.setActiveProgram(program);
@@ -114,6 +123,7 @@ export function load(app: Application) {
 						void 0,
 						context.converter.application.options.getValue("internalModule"),
 					);
+				internalNs[InternalModule] = true;
 				context.finalizeDeclarationReflection(internalNs);
 				const internalContext = context.withScope(internalNs);
 
@@ -130,7 +140,7 @@ export function load(app: Application) {
 						tried.add(s);
 					}
 
-					missing = discoverMissingExports(context, program);
+					missing = discoverMissingExports(mod, context, program);
 					for (const s of tried) {
 						missing.delete(s);
 					}
@@ -146,12 +156,28 @@ export function load(app: Application) {
 
 			knownPrograms.clear();
 			referencedSymbols.clear();
-			symbolToActiveRefl.clear();
+			symbolToOwningModule.clear();
 		},
 		void 0,
 		1e9,
 	);
 }
+
+function getOwningModule(context: Context): Reflection {
+	let refl = context.scope;
+	// Go up the reflection hierarchy until we get to a module
+	while (!refl.kindOf(ModuleLike)) {
+		refl = refl.parent!;
+	}
+
+	// The <internal> module cannot be an owning module.
+	if (refl[InternalModule]) {
+		return refl.parent!;
+	}
+
+	return refl;
+}
+
 function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
 	while (symbol.flags & ts.SymbolFlags.Alias) {
 		symbol = checker.getAliasedSymbol(symbol);

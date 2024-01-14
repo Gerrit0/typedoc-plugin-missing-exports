@@ -1,28 +1,39 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: ["16", "18", "20"]
-    name: Node ${{ matrix.node }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Set up Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Install
-        run: yarn
-      - name: Build
-        run: yarn build
-      - name: Test
-        run: yarn test
-      - name: Lint
-        run: yarn prettier --check .
-      - name: Circular dependency check
-        uses: gerrit0/circular-dependency-check@v1
-        with:
-          entry: index.js
+	build:
+		runs-on: ubuntu-latest
+		strategy:
+			matrix:
+				node: ["16", "18", "20"]
+		name: Node ${{ matrix.node }}
+		steps:
+			- name: Checkout repository
+				uses: actions/checkout@v4
+			- name: Set up Node
+				uses: actions/setup-node@v4
+				with:
+					node-version: ${{ matrix.node }}
+			- name: Install
+				run: yarn
+			- name: Build
+				run: yarn build
+			- name: Test
+				run: yarn test
+			- name: Lint
+				run: yarn prettier --check .
+	build-windows:
+		runs-on: windows-latest
+		name: Node 20 Windows
+			- name: Checkout repository
+				uses: actions/checkout@v4
+			- name: Set up Node
+				uses: actions/setup-node@v4
+				with:
+					node-version: ${{ matrix.node }}
+			- name: Install
+				run: yarn
+			- name: Build
+				run: yarn build
+			- name: Test
+				run: yarn test

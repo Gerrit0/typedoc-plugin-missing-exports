@@ -1,9 +1,12 @@
 import * as ts from "typescript";
-import { join } from "path";
+import { join } from "path/posix";
+import { outdent } from "outdent";
 import {
 	Application,
-	DocumentationEntryPoint,
+	ContainerReflection,
 	LogLevel,
+	Reflection,
+	ReflectionKind,
 	TSConfigReader,
 } from "typedoc";
 import { test, expect, beforeAll } from "vitest";
@@ -11,6 +14,29 @@ import { load } from "../index.js";
 
 let app: Application;
 let program: ts.Program;
+
+function toStringHierarchy(refl: Reflection, indent = 0) {
+	const text: string[] = [];
+
+	let increment = 1;
+	if (refl.kindOf(ReflectionKind.Project)) {
+		increment = 0;
+	} else {
+		text.push(
+			`${"\t".repeat(indent)}${ReflectionKind.singularString(refl.kind)} ${
+				refl.name
+			}`,
+		);
+	}
+
+	if (refl.kindOf(ReflectionKind.Project | ReflectionKind.Module)) {
+		for (const child of (refl as ContainerReflection).children || []) {
+			text.push(toStringHierarchy(child, indent + increment));
+		}
+	}
+
+	return text.join("\n");
+}
 
 beforeAll(async () => {
 	app = await Application.bootstrap(
@@ -30,145 +56,117 @@ beforeAll(async () => {
 	);
 });
 
-test("No missing exports", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "none",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/no-missing-exports/index.ts"),
-		)!,
-	};
+function convert(...paths: string[]) {
+	const entries = paths.map((path) => {
+		return {
+			displayName: path,
+			program,
+			sourceFile: program.getSourceFile(join(__dirname, "packages", path))!,
+		};
+	});
 
-	const project = app.converter.convert([entry]);
+	return app.converter.convert(entries);
+}
+
+test("No missing exports", () => {
+	const project = convert("no-missing-exports/index.ts");
 
 	expect(project.children?.map((c) => c.name)).toEqual(["foo"]);
 });
 
 test("Single missing export", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "single",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/single-missing-export/index.ts"),
-		)!,
-	};
+	const project = convert("single-missing-export/index.ts");
 
-	const project = app.converter.convert([entry]);
+	const hierarchy = outdent`
+		Module <internal>
+			Type alias FooType
+		Function foo
+	`;
 
-	expect(project.children?.map((c) => c.name)).toEqual(["<internal>", "foo"]);
-
-	const internal = project.children?.find((c) => c.name === "<internal>");
-	expect(internal?.children?.map((c) => c.name)).toEqual(["FooType"]);
+	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
 test("Nested missing export", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "nested",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/nested-missing-export/index.ts"),
-		)!,
-	};
+	const project = convert("nested-missing-export/index.ts");
 
-	const project = app.converter.convert([entry]);
+	const hierarchy = outdent`
+		Module <internal>
+			Class Bar
+			Class Foo
+		Function foo
+	`;
 
-	expect(project.children?.map((c) => c.name)).toEqual(["<internal>", "foo"]);
-
-	const internal = project.children?.find((c) => c.name === "<internal>");
-	expect(internal?.children?.map((c) => c.name)).toEqual(["Bar", "Foo"]);
+	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
 test("Multiple entry points", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "a",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/multi-entry/a.ts"),
-		)!,
-	};
-	const entry2: DocumentationEntryPoint = {
-		displayName: "b",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/multi-entry/b.ts"),
-		)!,
-	};
+	const project = convert("multi-entry/a.ts", "multi-entry/b.ts");
 
-	const project = app.converter.convert([entry, entry2]);
+	const hierarchy = outdent`
+		Module multi-entry/a.ts
+			Module <internal>
+				Type alias FooNum
+			Function aFn
+		Module multi-entry/b.ts
+			Module <internal>
+				Class Bar
+				Class Foo
+			Function bFn
+	`;
 
-	expect(project.children?.map((c) => c.name)).toEqual(["a", "b"]);
-
-	const a = project.children?.find((c) => c.name === "a");
-	expect(a?.children?.map((c) => c.name)).toEqual(["<internal>", "aFn"]);
-
-	const aInternal = a?.children?.find((c) => c.name === "<internal>");
-	expect(aInternal?.children?.map((c) => c.name)).toEqual(["FooNum"]);
-
-	const b = project.children?.find((c) => c.name === "b");
-	expect(b?.children?.map((c) => c.name)).toEqual(["<internal>", "bFn"]);
-
-	const bInternal = b?.children?.find((c) => c.name === "<internal>");
-	expect(bInternal?.children?.map((c) => c.name)).toEqual(["Bar", "Foo"]);
+	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
 test("Excluded non-exported", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "excluded",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/excluded/index.ts"),
-		)!,
-	};
-
-	const project = app.converter.convert([entry]);
+	const project = convert("excluded/index.ts");
 
 	expect(project.children?.map((c) => c.name)).toEqual(["foo"]);
 });
 
 test("Missing declaration", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "decl",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/missing-declaration/index.ts"),
-		)!,
-	};
+	const project = convert("missing-declaration/index.ts");
 
-	const project = app.converter.convert([entry]);
-	const internals = project.children?.find((x) => x.name === "<internal>");
-	expect(internals).toBeDefined();
+	const hierarchy = outdent`
+		Module <internal>
+			Type alias Options
+		Function f
+	`;
 
-	expect(internals?.children?.map((c) => c.name)).toEqual(["Options"]);
+	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
 // https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/15
 test("Issue #15", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "gh15",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/gh15/index.ts"),
-		)!,
-	};
+	const project = convert("gh15/index.ts");
 
-	const project = app.converter.convert([entry]);
-	const internals = project.children?.find((x) => x.name === "<internal>");
-	expect(internals).toBeDefined();
+	const hierarchy = outdent`
+		Module <internal>
+			Variable default
+		Type alias F
+	`;
 
-	expect(internals?.children?.map((c) => c.name)).toEqual(["default"]);
+	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
-test("Custom namespace name", () => {
-	const entry: DocumentationEntryPoint = {
-		displayName: "single",
-		program,
-		sourceFile: program.getSourceFile(
-			join(__dirname, "packages/single-missing-export/index.ts"),
-		)!,
-	};
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/22
+test("Issue #22", () => {
+	const project = convert("gh22/entry-a.ts", "gh22/entry-b.ts");
 
+	const hierarchy = outdent`
+		Module gh22/entry-a.ts
+			Module <internal>
+				Interface ReExport
+			Variable a
+		Module gh22/entry-b.ts
+			Variable b
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+});
+
+test("Custom module name", () => {
 	app.options.setValue("internalModule", "internals");
-	const project = app.converter.convert([entry]);
+	const project = convert("single-missing-export/index.ts");
 	app.options.reset("internalModule");
 
 	expect(project.children?.map((c) => c.name)).toEqual(["internals", "foo"]);
