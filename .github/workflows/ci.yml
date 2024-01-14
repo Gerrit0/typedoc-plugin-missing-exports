@@ -24,7 +24,7 @@ jobs:
               run: yarn prettier --check .
     build-windows:
         runs-on: windows-latest
-        name: Node 20 Windows
+        name: Node LTS Windows
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
