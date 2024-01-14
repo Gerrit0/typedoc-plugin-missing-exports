@@ -5,7 +5,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                node: ["16", "18", "20"]
+                node: ["18", "20"]
         name: Node ${{ matrix.node }}
         steps:
             - name: Checkout repository
@@ -30,8 +30,6 @@ jobs:
               uses: actions/checkout@v4
             - name: Set up Node
               uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ matrix.node }}
             - name: Install
               run: yarn
             - name: Build
