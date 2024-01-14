@@ -13,7 +13,7 @@ jobs:
               with:
                   fetch-depth: 0
             - id: check
-              uses: EndBug/version-check@v2.1.0
+              uses: EndBug/version-check@v2.1.2
               with:
                   diff-search: true
             - name: Set up Node
