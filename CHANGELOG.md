@@ -1,3 +1,7 @@
+### 2.3.0 (2024-06-12)
+
+- Added `--collapseInternalModule` option.
+
 ### 2.2.0 (2024-01-14)
 
 - Fixed an issue where if a re-exported symbol referenced an internal symbol, and more than one entry point was provided to TypeDoc,

@@ -10,12 +10,15 @@ import {
 	ProjectReflection,
 	ParameterType,
 	ContainerReflection,
+	JSX,
+	Renderer,
 } from "typedoc";
 
 declare module "typedoc" {
 	export interface TypeDocOptionMap {
 		internalModule: string;
 		placeInternalsInOwningModule: boolean;
+		collapseInternalModule: boolean;
 	}
 
 	export interface Reflection {
@@ -27,6 +30,10 @@ let hasMonkeyPatched = false;
 const ModuleLike: ReflectionKind =
 	ReflectionKind.Project | ReflectionKind.Module;
 const InternalModule = Symbol();
+
+const HOOK_JS = `
+<script>for (let k in localStorage) if (k.includes("tsd-accordion-") && k.includes(NAME)) localStorage.setItem(k, "false");</script>
+`.trim();
 
 export function load(app: Application) {
 	if (hasMonkeyPatched) {
@@ -81,6 +88,13 @@ export function load(app: Application) {
 		name: "internalModule",
 		help: "[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
 		defaultValue: "<internal>",
+	});
+
+	app.options.addDeclaration({
+		name: "collapseInternalModule",
+		help: "[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
+		defaultValue: false,
+		type: ParameterType.Boolean,
 	});
 
 	app.options.addDeclaration({
@@ -184,6 +198,19 @@ export function load(app: Application) {
 		void 0,
 		1e9,
 	);
+
+	app.renderer.on(Renderer.EVENT_BEGIN, () => {
+		if (app.options.getValue("collapseInternalModule")) {
+			app.renderer.hooks.on("head.end", () =>
+				JSX.createElement(JSX.Raw, {
+					html: HOOK_JS.replace(
+						"NAME",
+						JSON.stringify(app.options.getValue("internalModule")),
+					),
+				}),
+			);
+		}
+	});
 }
 
 function getOwningModule(context: Context): Reflection {

@@ -19,8 +19,9 @@ npx typedoc --plugin typedoc-plugin-missing-exports
 
 ### Options
 
-- `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into.
-- `placeInternalsInOwningModule` - Disable creating a module for internal symbols, and instead place them into the referencing module
+- `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into, defaults to `<internal>`.
+- `collapseInternalModule` - Include JS in the page to collapse all `<internal>` entries in the navigation on page load.
+- `placeInternalsInOwningModule` - Disable creating a module for internal symbols, and instead place them into the referencing module.
 
 ### Additional Reading
 

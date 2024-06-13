@@ -9,10 +9,10 @@
   "devDependencies": {
     "@types/node": "18",
     "outdent": "^0.8.0",
-    "prettier": "3.2.1",
-    "typedoc": "^0.25.7",
-    "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "prettier": "3.3.2",
+    "typedoc": "^0.25.13",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
   },
   "repository": {
     "type": "git",
