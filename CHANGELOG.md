@@ -1,3 +1,8 @@
+### 3.0.0 (2024-06-22)
+
+- Support TypeDoc 0.26
+- BREAKING: Drop support for TypeDoc before 0.26.
+
 ### 2.3.0 (2024-06-12)
 
 - Added `--collapseInternalModule` option.

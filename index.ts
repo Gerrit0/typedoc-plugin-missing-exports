@@ -118,6 +118,12 @@ export function load(app: Application) {
 	app.converter.on(
 		Converter.EVENT_CREATE_DECLARATION,
 		(context: Context, refl: Reflection) => {
+			// TypeDoc 0.26 doesn't fire EVENT_CREATE_DECLARATION for project
+			// We need to ensure the project has a program attached to it, so
+			// do that when the first declaration is created.
+			if (knownPrograms.size === 0) {
+				knownPrograms.set(refl.project, context.program);
+			}
 			if (refl.kindOf(ModuleLike)) {
 				knownPrograms.set(refl, context.program);
 			}
@@ -195,7 +201,6 @@ export function load(app: Application) {
 			referencedSymbols.clear();
 			symbolToOwningModule.clear();
 		},
-		void 0,
 		1e9,
 	);
 
