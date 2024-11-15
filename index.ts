@@ -139,7 +139,7 @@ export function load(app: Application) {
 				refl.name = relative(
 					app.options.getValue("basePath") || process.cwd(),
 					file.fileName,
-				);
+				).replace(/\\/g, "/");
 			}
 		},
 	);
