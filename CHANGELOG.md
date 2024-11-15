@@ -1,3 +1,8 @@
+### 3.0.1 (2024-10-15)
+
+- Fixed an issue where modules could be created by this plugin with names
+  including an absolute path, #12.
+
 ### 3.0.0 (2024-06-22)
 
 - Support TypeDoc 0.26

@@ -75,6 +75,7 @@ beforeAll(async () => {
 afterEach(() => {
 	app.options.reset("internalModule");
 	app.options.reset("placeInternalsInOwningModule");
+	app.options.reset("basePath");
 
 	expect(logger.messages).toEqual([]);
 	logger.messages = [];
@@ -157,6 +158,30 @@ test("Missing declaration", () => {
 	`;
 
 	expect(toStringHierarchy(project)).toBe(hierarchy);
+});
+
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/12
+test("Issue #12", () => {
+	const project = convert("gh12/index.ts");
+
+	const hierarchy = outdent`
+		Module <internal>
+			Namespace test/packages/gh12/mod.ts
+		Variable ReferencesModule
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+
+	app.options.setValue("basePath", "test/packages");
+	const project2 = convert("gh12/index.ts");
+
+	const hierarchy2 = outdent`
+		Module <internal>
+			Namespace gh12/mod.ts
+		Variable ReferencesModule
+	`;
+
+	expect(toStringHierarchy(project2)).toBe(hierarchy2);
 });
 
 // https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/15

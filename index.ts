@@ -1,3 +1,4 @@
+import { relative } from "path";
 import {
 	Application,
 	Context,
@@ -126,6 +127,19 @@ export function load(app: Application) {
 			}
 			if (refl.kindOf(ModuleLike)) {
 				knownPrograms.set(refl, context.program);
+			}
+
+			// #12 - This plugin might cause TypeDoc to convert some module without
+			// an export symbol to give it a name other than the full absolute
+			// path to the symbol. Detect this and rename it to a relative path
+			// based on base path if specified or CWD.
+			const symbol = context.project.getSymbolFromReflection(refl);
+			const file = symbol?.declarations?.find(ts.isSourceFile);
+			if (file && /^".*"$/.test(refl.name)) {
+				refl.name = relative(
+					app.options.getValue("basePath") || process.cwd(),
+					file.fileName,
+				);
 			}
 		},
 	);
