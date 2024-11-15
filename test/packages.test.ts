@@ -166,7 +166,7 @@ test("Issue #12", () => {
 
 	const hierarchy = outdent`
 		Module <internal>
-			Namespace test/packages/gh12/mod.ts
+			Namespace test/packages/gh12/mod
 		Variable ReferencesModule
 	`;
 
@@ -177,7 +177,7 @@ test("Issue #12", () => {
 
 	const hierarchy2 = outdent`
 		Module <internal>
-			Namespace gh12/mod.ts
+			Namespace gh12/mod
 		Variable ReferencesModule
 	`;
 

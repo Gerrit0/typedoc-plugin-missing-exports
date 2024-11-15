@@ -1,3 +1,7 @@
+### 3.0.2 (2024-10-15)
+
+- Do not include the file extension in derived module names.
+
 ### 3.0.1 (2024-10-15)
 
 - Fixed an issue where modules could be created by this plugin with names

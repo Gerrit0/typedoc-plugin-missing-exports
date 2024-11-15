@@ -136,10 +136,10 @@ export function load(app: Application) {
 			const symbol = context.project.getSymbolFromReflection(refl);
 			const file = symbol?.declarations?.find(ts.isSourceFile);
 			if (file && /^".*"$/.test(refl.name)) {
-				refl.name = relative(
-					app.options.getValue("basePath") || process.cwd(),
+				refl.name = getModuleName(
 					file.fileName,
-				).replace(/\\/g, "/");
+					app.options.getValue("basePath") || process.cwd(),
+				);
 			}
 		},
 	);
@@ -266,4 +266,10 @@ function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
 	}
 
 	return true;
+}
+
+function getModuleName(fileName: string, baseDir: string) {
+	return relative(baseDir, fileName)
+		.replace(/\\/g, "/")
+		.replace(/(\/index)?(\.d)?\.([cm]?[tj]s|[tj]sx?)$/, "");
 }
