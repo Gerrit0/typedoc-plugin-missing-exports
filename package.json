@@ -1,6 +1,6 @@
 {
   "name": "typedoc-plugin-missing-exports",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "Include non-exported types in TypeDoc documentation",
   "exports": "./index.js",
   "type": "module",
