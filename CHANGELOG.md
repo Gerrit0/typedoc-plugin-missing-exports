@@ -1,3 +1,7 @@
+### 3.1.0 (2024-11-24)
+
+- Support TypeDoc 0.27
+
 ### 3.0.2 (2024-10-15)
 
 - Do not include the file extension in derived module names.
