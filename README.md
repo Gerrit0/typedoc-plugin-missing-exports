@@ -13,7 +13,7 @@ If your project references classes which are built into the language (e.g. `HTML
 ### Usage
 
 ```bash
-npm install typedoc-plugin-missing-exports
+npm install typedoc-plugin-missing-exports --save-dev
 npx typedoc --plugin typedoc-plugin-missing-exports
 ```
 
