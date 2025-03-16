@@ -5,7 +5,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                node: ["18", "20"]
+                node: ["18", "20", "22"]
         name: Node ${{ matrix.node }}
         steps:
             - name: Checkout repository
@@ -14,14 +14,16 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node }}
+            - name: Install pnpm
+              run: npm install -g pnpm@10
             - name: Install
-              run: yarn
+              run: pnpm install
             - name: Build
-              run: yarn build
+              run: pnpm build
             - name: Test
-              run: yarn test
+              run: pnpm test
             - name: Lint
-              run: yarn prettier --check .
+              run: pnpm lint
     build-windows:
         runs-on: windows-latest
         name: Node LTS Windows
@@ -30,9 +32,13 @@ jobs:
               uses: actions/checkout@v4
             - name: Set up Node
               uses: actions/setup-node@v4
+            - name: Install pnpm
+              run: npm install -g pnpm@10
             - name: Install
-              run: yarn
+              run: pnpm install
             - name: Build
-              run: yarn build
+              run: pnpm build
             - name: Test
-              run: yarn test
+              run: pnpm test
+            - name: Lint
+              run: pnpm lint

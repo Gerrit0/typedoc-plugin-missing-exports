@@ -2,7 +2,7 @@
 
 Automatically document symbols which aren't exported but are referenced.
 
-> Supports TypeDoc 0.26.x and 0.27.x
+> Supports TypeDoc 0.28.x
 
 TypeDoc looks at each entry point provided and documents all exports from that entry point.
 

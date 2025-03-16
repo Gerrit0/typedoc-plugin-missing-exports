@@ -21,15 +21,18 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: "20"
+            - name: Install pnpm
+              if: steps.check.outputs.changed == 'true'
+              run: npm install -g pnpm@10
             - name: Install
               if: steps.check.outputs.changed == 'true'
-              run: yarn
+              run: pnpm
             - name: Build
               if: steps.check.outputs.changed == 'true'
-              run: yarn build
+              run: pnpm build
             - name: Test
               if: steps.check.outputs.changed == 'true'
-              run: yarn test
+              run: pnpm test
             - name: Setup publish token
               if: steps.check.outputs.changed == 'true'
               run: echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > .npmrc
@@ -38,6 +41,6 @@ jobs:
             - name: Publish
               if: steps.check.outputs.changed == 'true'
               run: |
-                  yarn publish --non-interactive
+                  pnpm publish
                   git tag v$(jq '.version' package.json -r)
                   git push --tags

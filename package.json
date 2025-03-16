@@ -8,11 +8,11 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "18",
+    "dprint": "^0.49.0",
     "outdent": "^0.8.0",
-    "prettier": "3.3.3",
-    "typedoc": "^0.27.0-beta.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.5"
+    "typedoc": "^0.28.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
   },
   "repository": {
     "type": "git",
@@ -25,12 +25,17 @@
     "typedoc-plugin"
   ],
   "peerDependencies": {
-    "typedoc": "0.26.x || 0.27.x"
+    "typedoc": "0.28.x"
   },
   "scripts": {
     "test": "vitest run test/packages.test.ts",
     "test:doc": "typedoc --plugin ./index.js --tsconfig ./test/packages",
     "build": "tsc",
-    "lint": "prettier --check ."
+    "lint": "dprint check"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "dprint"
+    ]
   }
 }

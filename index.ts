@@ -5,7 +5,6 @@ import {
 	Converter,
 	ReflectionKind,
 	TypeScript as ts,
-	ReferenceType,
 	Reflection,
 	DeclarationReflection,
 	ProjectReflection,
@@ -60,7 +59,7 @@ export function load(app: Application) {
 		referencedSymbols.set(program, ownedByOther);
 
 		for (const s of [...referenced]) {
-			if (context.project.getReflectionFromSymbol(s)) {
+			if (context.getReflectionFromSymbol(s)) {
 				referenced.delete(s);
 			} else if (symbolToOwningModule.get(s) !== owningModule) {
 				referenced.delete(s);
@@ -72,8 +71,8 @@ export function load(app: Application) {
 	}
 
 	// Monkey patch the constructor for references so that we can get every
-	const origCreateSymbolReference = ReferenceType.createSymbolReference;
-	ReferenceType.createSymbolReference = function (symbol, context, name) {
+	const origCreateSymbolReference = Context.prototype.createSymbolReference;;
+	Context.prototype.createSymbolReference = function (symbol, context, name) {
 		const owningModule = getOwningModule(context);
 		const set = referencedSymbols.get(context.program);
 		symbolToOwningModule.set(symbol, owningModule);
@@ -119,7 +118,7 @@ export function load(app: Application) {
 	app.converter.on(
 		Converter.EVENT_CREATE_DECLARATION,
 		(context: Context, refl: Reflection) => {
-			// TypeDoc 0.26 doesn't fire EVENT_CREATE_DECLARATION for project
+			// TypeDoc 0.26+ doesn't fire EVENT_CREATE_DECLARATION for project
 			// We need to ensure the project has a program attached to it, so
 			// do that when the first declaration is created.
 			if (knownPrograms.size === 0) {
@@ -133,7 +132,7 @@ export function load(app: Application) {
 			// an export symbol to give it a name other than the full absolute
 			// path to the symbol. Detect this and rename it to a relative path
 			// based on base path if specified or CWD.
-			const symbol = context.project.getSymbolFromReflection(refl);
+			const symbol = context.getSymbolFromReflection(refl);
 			const file = symbol?.declarations?.find(ts.isSourceFile);
 			if (file && /^".*"$/.test(refl.name)) {
 				refl.name = getModuleName(
@@ -178,7 +177,7 @@ export function load(app: Application) {
 						);
 					internalNs[InternalModule] = true;
 					context.finalizeDeclarationReflection(internalNs);
-					internalContext = context.withScope(internalNs);
+					internalContext = context.withScope(mod).withScope(internalNs);
 				}
 
 				// Keep track of which symbols we've tried to convert. If they don't get converted
