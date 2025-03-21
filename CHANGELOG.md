@@ -1,3 +1,8 @@
+### 4.0.0 (2025-03-21)
+
+- BREAKING: Drop support for TypeDoc <0.28.1.
+- Support TypeDoc ^0.28.1, #31.
+
 ### 3.1.0 (2024-11-24)
 
 - Support TypeDoc 0.27
