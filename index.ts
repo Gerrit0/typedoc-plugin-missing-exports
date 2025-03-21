@@ -185,6 +185,9 @@ export function load(app: Application) {
 				// an infinite loop when converting.
 				const tried = new Set<ts.Symbol>();
 
+				// Any re-exports will be deferred, so we need to allow deferred conversion here
+				// and finalize it after the loop.
+				app.converter.permitDeferredConversion();
 				do {
 					for (const s of missing) {
 						if (shouldConvertSymbol(s, context.checker)) {
@@ -198,6 +201,7 @@ export function load(app: Application) {
 						missing.delete(s);
 					}
 				} while (missing.size > 0);
+				app.converter.finalizeDeferredConversion();
 
 				// If we added a module and all the missing symbols were excluded, get rid of our namespace.
 				if (

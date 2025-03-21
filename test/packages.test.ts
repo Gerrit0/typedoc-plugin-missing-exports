@@ -104,7 +104,7 @@ test("Single missing export", () => {
 
 	const hierarchy = outdent`
 		Module <internal>
-			Type alias FooType
+			Type Alias FooType
 		Function foo
 	`;
 
@@ -130,7 +130,7 @@ test("Multiple entry points", () => {
 	const hierarchy = outdent`
 		Module multi-entry/a.ts
 			Module <internal>
-				Type alias FooNum
+				Type Alias FooNum
 			Function aFn
 		Module multi-entry/b.ts
 			Module <internal>
@@ -153,7 +153,7 @@ test("Missing declaration", () => {
 
 	const hierarchy = outdent`
 		Module <internal>
-			Type alias Options
+			Type Alias Options
 		Function f
 	`;
 
@@ -191,7 +191,7 @@ test("Issue #15", () => {
 	const hierarchy = outdent`
 		Module <internal>
 			Variable default
-		Type alias F
+		Type Alias F
 	`;
 
 	expect(toStringHierarchy(project)).toBe(hierarchy);
@@ -225,7 +225,7 @@ test("Disabling <internals> module, #16", () => {
 	const project = convert("single-missing-export/index.ts");
 
 	const hierarchy = outdent`
-		Type alias FooType
+		Type Alias FooType
 		Function foo
 	`;
 
