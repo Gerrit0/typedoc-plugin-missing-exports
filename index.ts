@@ -1,17 +1,17 @@
 import { relative } from "path";
 import {
 	Application,
+	ContainerReflection,
 	Context,
 	Converter,
-	ReflectionKind,
-	TypeScript as ts,
-	Reflection,
 	DeclarationReflection,
-	ProjectReflection,
-	ParameterType,
-	ContainerReflection,
 	JSX,
+	ParameterType,
+	ProjectReflection,
+	Reflection,
+	ReflectionKind,
 	Renderer,
+	TypeScript as ts,
 } from "typedoc";
 
 declare module "typedoc" {
@@ -27,8 +27,7 @@ declare module "typedoc" {
 }
 
 let hasMonkeyPatched = false;
-const ModuleLike: ReflectionKind =
-	ReflectionKind.Project | ReflectionKind.Module;
+const ModuleLike: ReflectionKind = ReflectionKind.Project | ReflectionKind.Module;
 const InternalModule = Symbol();
 
 const HOOK_JS = `
@@ -71,8 +70,8 @@ export function load(app: Application) {
 	}
 
 	// Monkey patch the constructor for references so that we can get every
-	const origCreateSymbolReference = Context.prototype.createSymbolReference;;
-	Context.prototype.createSymbolReference = function (symbol, context, name) {
+	const origCreateSymbolReference = Context.prototype.createSymbolReference;
+	Context.prototype.createSymbolReference = function(symbol, context, name) {
 		const owningModule = getOwningModule(context);
 		const set = referencedSymbols.get(context.program);
 		symbolToOwningModule.set(symbol, owningModule);
@@ -86,28 +85,31 @@ export function load(app: Application) {
 
 	app.options.addDeclaration({
 		name: "internalModule",
-		help: "[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
+		help:
+			"[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
 		defaultValue: "<internal>",
 	});
 
 	app.options.addDeclaration({
 		name: "collapseInternalModule",
-		help: "[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
+		help:
+			"[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
 		defaultValue: false,
 		type: ParameterType.Boolean,
 	});
 
 	app.options.addDeclaration({
 		name: "placeInternalsInOwningModule",
-		help: "[typedoc-plugin-missing-exports] If set internal symbols will not be placed into an internals module, but directly into the module which references them.",
+		help:
+			"[typedoc-plugin-missing-exports] If set internal symbols will not be placed into an internals module, but directly into the module which references them.",
 		defaultValue: false,
 		type: ParameterType.Boolean,
 	});
 
 	app.converter.on(Converter.EVENT_BEGIN, () => {
 		if (
-			app.options.getValue("placeInternalsInOwningModule") &&
-			app.options.isSet("internalModule")
+			app.options.getValue("placeInternalsInOwningModule")
+			&& app.options.isSet("internalModule")
 		) {
 			app.logger.warn(
 				`[typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.`,
@@ -146,8 +148,9 @@ export function load(app: Application) {
 	app.converter.on(
 		Converter.EVENT_RESOLVE_BEGIN,
 		function onResolveBegin(context: Context) {
-			const modules: (DeclarationReflection | ProjectReflection)[] =
-				context.project.getChildrenByKind(ReflectionKind.Module);
+			const modules: (DeclarationReflection | ProjectReflection)[] = context.project.getChildrenByKind(
+				ReflectionKind.Module,
+			);
 			if (modules.length === 0) {
 				// Single entry point, just target the project.
 				modules.push(context.project);
@@ -205,8 +208,8 @@ export function load(app: Application) {
 
 				// If we added a module and all the missing symbols were excluded, get rid of our namespace.
 				if (
-					internalContext.scope[InternalModule] &&
-					!(internalContext.scope as ContainerReflection).children?.length
+					internalContext.scope[InternalModule]
+					&& !(internalContext.scope as ContainerReflection).children?.length
 				) {
 					context.project.removeReflection(internalContext.scope);
 				}
@@ -229,8 +232,7 @@ export function load(app: Application) {
 						"NAME",
 						JSON.stringify(app.options.getValue("internalModule")),
 					),
-				}),
-			);
+				}));
 		}
 	});
 }

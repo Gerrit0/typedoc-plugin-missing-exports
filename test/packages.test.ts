@@ -1,16 +1,16 @@
-import * as ts from "typescript";
-import { join } from "path/posix";
 import { outdent } from "outdent";
+import { join } from "path/posix";
 import {
 	Application,
 	ContainerReflection,
-	LogLevel,
 	Logger,
+	LogLevel,
 	Reflection,
 	ReflectionKind,
 	TSConfigReader,
 } from "typedoc";
-import { test, expect, beforeAll, afterEach } from "vitest";
+import * as ts from "typescript";
+import { afterEach, beforeAll, expect, test } from "vitest";
 import { load } from "../index.js";
 
 let app: Application;
@@ -25,9 +25,7 @@ function toStringHierarchy(refl: Reflection, indent = 0) {
 		increment = 0;
 	} else {
 		text.push(
-			`${"\t".repeat(indent)}${ReflectionKind.singularString(refl.kind)} ${
-				refl.name
-			}`,
+			`${"\t".repeat(indent)}${ReflectionKind.singularString(refl.kind)} ${refl.name}`,
 		);
 	}
 

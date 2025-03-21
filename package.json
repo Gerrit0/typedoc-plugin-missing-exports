@@ -1,41 +1,41 @@
 {
-  "name": "typedoc-plugin-missing-exports",
-  "version": "3.1.0",
-  "description": "Include non-exported types in TypeDoc documentation",
-  "exports": "./index.js",
-  "type": "module",
-  "author": "Gerrit Birkeland",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "18",
-    "dprint": "^0.49.0",
-    "outdent": "^0.8.0",
-    "typedoc": "^0.28.1",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.8"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Gerrit0/typedoc-plugin-missing-exports.git"
-  },
-  "files": [
-    "index.js"
-  ],
-  "keywords": [
-    "typedoc-plugin"
-  ],
-  "peerDependencies": {
-    "typedoc": "^0.28.1"
-  },
-  "scripts": {
-    "test": "vitest run test/packages.test.ts",
-    "test:doc": "typedoc --plugin ./index.js --tsconfig ./test/packages",
-    "build": "tsc",
-    "lint": "dprint check"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "dprint"
-    ]
-  }
+	"name": "typedoc-plugin-missing-exports",
+	"version": "3.1.0",
+	"description": "Include non-exported types in TypeDoc documentation",
+	"exports": "./index.js",
+	"type": "module",
+	"author": "Gerrit Birkeland",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "18",
+		"dprint": "^0.49.0",
+		"outdent": "^0.8.0",
+		"typedoc": "^0.28.1",
+		"typescript": "^5.8.2",
+		"vitest": "^3.0.8"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Gerrit0/typedoc-plugin-missing-exports.git"
+	},
+	"files": [
+		"index.js"
+	],
+	"keywords": [
+		"typedoc-plugin"
+	],
+	"peerDependencies": {
+		"typedoc": "^0.28.1"
+	},
+	"scripts": {
+		"test": "vitest run test/packages.test.ts",
+		"test:doc": "typedoc --plugin ./index.js --tsconfig ./test/packages",
+		"build": "tsc",
+		"lint": "dprint check"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"dprint"
+		]
+	}
 }
