@@ -10,6 +10,7 @@ import {
 	ProjectReflection,
 	Reflection,
 	ReflectionKind,
+	ReflectionSymbolId,
 	Renderer,
 	TypeScript as ts,
 } from "typedoc";
@@ -19,6 +20,7 @@ declare module "typedoc" {
 		internalModule: string;
 		placeInternalsInOwningModule: boolean;
 		collapseInternalModule: boolean;
+		includeDocCommentReferences: boolean;
 	}
 
 	export interface Reflection {
@@ -46,13 +48,19 @@ export function load(app: Application) {
 	const symbolToOwningModule = new Map<ts.Symbol, Reflection>();
 	const knownPrograms = new Map<Reflection, ts.Program>();
 
+	/**
+	 * Extracts the set of referenced but export-missing symbols owned by a particular module.
+	 *
+	 * > [!CAUTION]
+	 * > This function is not pure. The returned symbols are removed from the “referenced” set and will not be returned again.
+	 */
 	function discoverMissingExports(
 		owningModule: Reflection,
 		context: Context,
 		program: ts.Program,
 	): Set<ts.Symbol> {
 		// An export is missing if if was referenced
-		// Is not contained in the documented
+		// and is not contained in the documented reflections.
 		const referenced = referencedSymbols.get(program) || new Set();
 		const ownedByOther = new Set<ts.Symbol>();
 		referencedSymbols.set(program, ownedByOther);
@@ -69,31 +77,40 @@ export function load(app: Application) {
 		return referenced;
 	}
 
-	// Monkey patch the constructor for references so that we can get every
-	const origCreateSymbolReference = Context.prototype.createSymbolReference;
-	Context.prototype.createSymbolReference = function(symbol, context, name) {
-		const owningModule = getOwningModule(context);
-		const set = referencedSymbols.get(context.program);
+	/**
+	 * Adds a symbol to the set of referenced (but not necessarily unexported) symbols in the provided {@link Context}.
+	 */
+	function markSymbolReferenced(
+		symbol: ts.Symbol,
+		owningModule: Reflection,
+		program: ts.Program,
+	) {
+		const set = referencedSymbols.get(program);
 		symbolToOwningModule.set(symbol, owningModule);
 		if (set) {
 			set.add(symbol);
 		} else {
-			referencedSymbols.set(context.program, new Set([symbol]));
+			referencedSymbols.set(program, new Set([symbol]));
 		}
+	}
+
+	// Monkey patch the constructor for references so that we can inspect them.
+	const origCreateSymbolReference = Context.prototype.createSymbolReference;
+	Context.prototype.createSymbolReference = function (symbol, context, name) {
+		const owningModule = getOwningModule(context);
+		markSymbolReferenced(symbol, owningModule, context.program);
 		return origCreateSymbolReference.call(this, symbol, context, name);
 	};
 
 	app.options.addDeclaration({
 		name: "internalModule",
-		help:
-			"[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
+		help: "[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
 		defaultValue: "<internal>",
 	});
 
 	app.options.addDeclaration({
 		name: "collapseInternalModule",
-		help:
-			"[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
+		help: "[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
 		defaultValue: false,
 		type: ParameterType.Boolean,
 	});
@@ -106,10 +123,17 @@ export function load(app: Application) {
 		type: ParameterType.Boolean,
 	});
 
+	app.options.addDeclaration({
+		name: "includeDocCommentReferences",
+		help: "[typedoc-plugin-missing-exports] If set, also export private symbols only referenced via documentation comments using the @link family of tags.",
+		defaultValue: false,
+		type: ParameterType.Boolean,
+	});
+
 	app.converter.on(Converter.EVENT_BEGIN, () => {
 		if (
-			app.options.getValue("placeInternalsInOwningModule")
-			&& app.options.isSet("internalModule")
+			app.options.getValue("placeInternalsInOwningModule") &&
+			app.options.isSet("internalModule")
 		) {
 			app.logger.warn(
 				`[typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.`,
@@ -156,10 +180,14 @@ export function load(app: Application) {
 				modules.push(context.project);
 			}
 
+			const docCommentLinksProcessed = new Set<Reflection>();
+
 			for (const mod of modules) {
 				const program = knownPrograms.get(mod);
 				if (!program) continue;
 
+				if (app.options.getValue("includeDocCommentReferences"))
+					discoverLinkedSymbols(docCommentLinksProcessed, context, program);
 				let missing = discoverMissingExports(mod, context, program);
 				if (!missing.size) continue;
 
@@ -199,6 +227,8 @@ export function load(app: Application) {
 						tried.add(s);
 					}
 
+					if (app.options.getValue("includeDocCommentReferences"))
+						discoverLinkedSymbols(docCommentLinksProcessed, context, program);
 					missing = discoverMissingExports(mod, context, program);
 					for (const s of tried) {
 						missing.delete(s);
@@ -235,6 +265,124 @@ export function load(app: Application) {
 				}));
 		}
 	});
+
+	function discoverLinkedSymbols(
+		docCommentLinksProcessed: Set<Reflection>,
+		context: Context,
+		program: ts.Program,
+	) {
+		for (const refl of Object.values(context.project.reflections).filter(
+			(refl) => !docCommentLinksProcessed.has(refl),
+		)) {
+			docCommentLinksProcessed.add(refl);
+
+			const linkTags = ["@link", "@linkcode", "@linkplain"];
+
+			if (refl.comment !== undefined)
+				for (const part of [
+					...refl.comment.summary,
+					...refl.comment.blockTags
+						.filter((bt) => bt.tag != "@privateRemarks")
+						.flatMap((bt) => bt.content),
+				]) {
+					if (
+						part.kind === "inline-tag" &&
+						linkTags.includes(part.tag) &&
+						part.target instanceof ReflectionSymbolId
+					) {
+						const [symbol, decl] = resolveReflectionSymbolId(
+							part.target,
+							program,
+						);
+						const owningSymbol = getNodeOwningSymbol(
+							decl,
+							program.getTypeChecker(),
+						);
+						const owningModule = context.getReflectionFromSymbol(owningSymbol);
+
+						// if we can't tell who owns the target, it's likely an undocumented file or namespace.
+						if (owningModule === undefined) continue;
+
+						markSymbolReferenced(symbol, owningModule, program);
+					}
+				}
+		}
+	}
+}
+
+/**
+ * Attempts to locate a {@link ts.Symbol} that corresponds to the provided {@link ReflectionSymbolId} in a given program.
+ *
+ * > [!NOTE]
+ * > Currently, this resolution is implemented as a walk over the TS AST, as TypeDoc does not preserve information about non-exported `ReflectionSymbolId`s.
+ * >
+ * > There are some heuristics involved in this search, so it might not locate all possible symbols.
+ */
+function resolveReflectionSymbolId(
+	target: ReflectionSymbolId,
+	program: ts.Program,
+): [symbol: ts.Symbol, declaration: ts.Node] {
+	if (target.fileName === undefined) throw new Error("missing file path :(");
+
+	const sourceFile = program.getSourceFile(target.fileName);
+	if (sourceFile === undefined) throw new Error("source file unknown :(");
+
+	let token = getTokenByStartPos(sourceFile, target.pos);
+
+	const checker = program.getTypeChecker();
+
+	let node: ts.Node | undefined = token;
+	while (node !== undefined) {
+		const symbolNode =
+			ts.isDeclarationStatement(node) ||
+			[
+				ts.SyntaxKind.VariableDeclaration,
+				ts.SyntaxKind.PropertyDeclaration,
+				ts.SyntaxKind.MethodDeclaration,
+			].includes(node.kind)
+				? (node as ts.NamedDeclaration).name
+				: undefined;
+
+		if (symbolNode !== undefined) {
+			const symbol = checker.getSymbolAtLocation(symbolNode);
+
+			if (symbol === undefined)
+				throw new Error("the located node does not seem to hold a symbol.");
+
+			const targetName = target.qualifiedName.split(".").at(-1)!;
+			if (symbol.name !== targetName)
+				throw new Error(
+					`the located symbol's name (\`${symbol.name}\`) doesn't match the expected one (\`${targetName}\`); the referenced symbol may be currently unsupported.`,
+				);
+
+			return [symbol, node];
+		}
+		node = node.parent;
+	}
+	throw new Error(
+		"failed to locate a symbol-holding node for the target token; the referenced symbol may be currently unsupported.",
+	);
+}
+
+function getTokenByStartPos(sourceFile: ts.SourceFile, pos: number): ts.Node {
+	let token: ts.Node = sourceFile;
+	while (!ts.isToken(token)) {
+		const nodeNext = token
+			.getChildren()
+			.find((ch) => ch.pos <= pos && pos < ch.end);
+
+		if (nodeNext === undefined)
+			throw new Error("there are no tokens at the requested position. :(");
+
+		token = nodeNext;
+	}
+
+	if (token.getStart() != pos)
+		throw new Error(
+			"the requested position does not point at a start of a token.",
+		);
+
+	return token;
 }
 
 function getOwningModule(context: Context): Reflection {
@@ -250,6 +398,32 @@ function getOwningModule(context: Context): Reflection {
 	}
 
 	return refl;
+}
+
+function getNodeOwningSymbol(
+	node: ts.Node,
+	checker: ts.TypeChecker,
+): ts.Symbol {
+	let ancestor: ts.Node | undefined = node.parent;
+	while (ancestor !== undefined) {
+		const symbolNode = ts.isDeclarationStatement(ancestor)
+			? ancestor.name
+			: ts.isSourceFile(ancestor)
+				? ancestor
+				: undefined;
+
+		if (symbolNode !== undefined) {
+			const sym = checker.getSymbolAtLocation(symbolNode);
+			if (sym === undefined)
+				throw new Error(
+					"the symbol node does not seem to have an associated symbol. this is a bug.",
+				);
+			return sym;
+		}
+
+		ancestor = ancestor.parent;
+	}
+	throw new Error("every node should have an owning `SourceFile`.");
 }
 
 function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
