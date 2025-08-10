@@ -211,6 +211,36 @@ test("Issue #22", () => {
 	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/33
+test("Issue #33", () => {
+	{
+		const project = convert("gh33/index.ts");
+
+		const hierarchy = outdent`
+			Variable myGreatSymbol
+		`;
+
+		expect(toStringHierarchy(project)).toBe(hierarchy);
+	}
+	app.options.setValue("includeDocCommentReferences", true);
+	{
+		const project = convert("gh33/index.ts");
+
+		// NOTE: `ShamefullyHidden` is deliberately not included, as this plugin does not (automatically) add exports to parents of referenced symbols.
+		const hierarchy = outdent`
+			Module <internal>
+				Class GreatnessFactoryFactoryBuilderAdapterSingleton
+				Type Alias SecretType
+				Type Alias SecretType2
+				Variable myBasicSymbol
+				Function greatnessFactory
+			Variable myGreatSymbol
+		`;
+
+		expect(toStringHierarchy(project)).toBe(hierarchy);
+	}
+});
+
 test("Custom module name", () => {
 	app.options.setValue("internalModule", "internals");
 	const project = convert("single-missing-export/index.ts");
