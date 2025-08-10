@@ -10,7 +10,6 @@ import {
 	ProjectReflection,
 	Reflection,
 	ReflectionKind,
-	ReflectionSymbolId,
 	Renderer,
 	TypeScript as ts,
 } from "typedoc";
@@ -52,7 +51,7 @@ export function load(app: Application) {
 	 * Extracts the set of referenced but export-missing symbols owned by a particular module.
 	 *
 	 * > [!CAUTION]
-	 * > This function is not pure. The returned symbols are removed from the “referenced” set and will not be returned again.
+	 * > This function is not pure. The returned symbols are removed from the "referenced" set and will not be returned again.
 	 */
 	function discoverMissingExports(
 		owningModule: Reflection,
@@ -66,19 +65,6 @@ export function load(app: Application) {
 		referencedSymbols.set(program, ownedByOther);
 
 		for (const s of [...referenced]) {
-
-			// #35 - Since TypeDoc#2978, TypeDoc will create symbol references which point to
-			// class methods. This previously wasn't an issue since references were set up directly
-			// upon resolution, but #2978 needs to use symbols to detect methods through inheritance.
-			// This somewhat breaks this plugin since we expect to be able to go through all created
-			// references and for them to be real missed values. It wasn't intentional that this
-			// plugin would lift class/interface symbols up out of the included classes; we'll just
-			// entirely ignore symbol references to methods here.
-			if (s.flags & ts.SymbolFlags.Method) {
-				referenced.delete(s);
-				continue;
-			}
-
 			if (context.getReflectionFromSymbol(s)) {
 				referenced.delete(s);
 			} else if (symbolToOwningModule.get(s) !== owningModule) {
@@ -109,21 +95,32 @@ export function load(app: Application) {
 
 	// Monkey patch the constructor for references so that we can inspect them.
 	const origCreateSymbolReference = Context.prototype.createSymbolReference;
-	Context.prototype.createSymbolReference = function (symbol, context, name) {
+	Context.prototype.createSymbolReference = function(symbol, context, name) {
 		const owningModule = getOwningModule(context);
 		markSymbolReferenced(symbol, owningModule, context.program);
 		return origCreateSymbolReference.call(this, symbol, context, name);
 	};
 
+	const origCreateSymbolId = Context.prototype.createSymbolId;
+	Context.prototype.createSymbolId = function(symbol, declaration) {
+		if (app.options.getValue("includeDocCommentReferences")) {
+			const owningModule = getOwningModule(this);
+			markSymbolReferenced(symbol, owningModule, this.program);
+		}
+		return origCreateSymbolId.call(this, symbol, declaration);
+	};
+
 	app.options.addDeclaration({
 		name: "internalModule",
-		help: "[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
+		help:
+			"[typedoc-plugin-missing-exports] Define the name of the module that internal symbols which are not exported should be placed into.",
 		defaultValue: "<internal>",
 	});
 
 	app.options.addDeclaration({
 		name: "collapseInternalModule",
-		help: "[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
+		help:
+			"[typedoc-plugin-missing-exports] Include JS in the page to collapse all <internal> entries in the navigation on page load.",
 		defaultValue: false,
 		type: ParameterType.Boolean,
 	});
@@ -138,18 +135,25 @@ export function load(app: Application) {
 
 	app.options.addDeclaration({
 		name: "includeDocCommentReferences",
-		help: "[typedoc-plugin-missing-exports] If set, also export private symbols only referenced via documentation comments using the @link family of tags.",
+		help:
+			"[typedoc-plugin-missing-exports] If set, also export private symbols only referenced via documentation comments using the @link family of tags.",
 		defaultValue: false,
 		type: ParameterType.Boolean,
 	});
 
 	app.converter.on(Converter.EVENT_BEGIN, () => {
 		if (
-			app.options.getValue("placeInternalsInOwningModule") &&
-			app.options.isSet("internalModule")
+			app.options.getValue("placeInternalsInOwningModule")
+			&& app.options.isSet("internalModule")
 		) {
 			app.logger.warn(
 				`[typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.`,
+			);
+		}
+
+		if (app.options.getValue("includeDocCommentReferences") && parseFloat(Application.VERSION.slice(2)) < 28.9) {
+			app.logger.warn(
+				`[typedoc-plugin-missing-exports] The includeDocCommentReferences option requires TypeDoc 0.28.9 or later.`,
 			);
 		}
 	});
@@ -193,19 +197,18 @@ export function load(app: Application) {
 				modules.push(context.project);
 			}
 
-			const docCommentLinksProcessed = new Set<Reflection>();
-
 			for (const mod of modules) {
 				const program = knownPrograms.get(mod);
 				if (!program) continue;
 
-				if (app.options.getValue("includeDocCommentReferences"))
-					discoverLinkedSymbols(docCommentLinksProcessed, context, program);
+				// Nasty hack here that will almost certainly break in future TypeDoc versions.
+				// Do this before discovering missing exports as discovering missing exports will
+				// create symbol IDs, which requires a program due to our override of the method
+				// on TypeDoc's Context.
+				context.setActiveProgram(program);
+
 				let missing = discoverMissingExports(mod, context, program);
 				if (!missing.size) continue;
-
-				// Nasty hack here that will almost certainly break in future TypeDoc versions.
-				context.setActiveProgram(program);
 
 				let internalContext: Context;
 				if (app.options.getValue("placeInternalsInOwningModule")) {
@@ -240,8 +243,6 @@ export function load(app: Application) {
 						tried.add(s);
 					}
 
-					if (app.options.getValue("includeDocCommentReferences"))
-						discoverLinkedSymbols(docCommentLinksProcessed, context, program);
 					missing = discoverMissingExports(mod, context, program);
 					for (const s of tried) {
 						missing.delete(s);
@@ -278,124 +279,6 @@ export function load(app: Application) {
 				}));
 		}
 	});
-
-	function discoverLinkedSymbols(
-		docCommentLinksProcessed: Set<Reflection>,
-		context: Context,
-		program: ts.Program,
-	) {
-		for (const refl of Object.values(context.project.reflections).filter(
-			(refl) => !docCommentLinksProcessed.has(refl),
-		)) {
-			docCommentLinksProcessed.add(refl);
-
-			const linkTags = ["@link", "@linkcode", "@linkplain"];
-
-			if (refl.comment !== undefined)
-				for (const part of [
-					...refl.comment.summary,
-					...refl.comment.blockTags
-						.filter((bt) => bt.tag != "@privateRemarks")
-						.flatMap((bt) => bt.content),
-				]) {
-					if (
-						part.kind === "inline-tag" &&
-						linkTags.includes(part.tag) &&
-						part.target instanceof ReflectionSymbolId
-					) {
-						const [symbol, decl] = resolveReflectionSymbolId(
-							part.target,
-							program,
-						);
-						const owningSymbol = getNodeOwningSymbol(
-							decl,
-							program.getTypeChecker(),
-						);
-						const owningModule = context.getReflectionFromSymbol(owningSymbol);
-
-						// if we can't tell who owns the target, it's likely an undocumented file or namespace.
-						if (owningModule === undefined) continue;
-
-						markSymbolReferenced(symbol, owningModule, program);
-					}
-				}
-		}
-	}
-}
-
-/**
- * Attempts to locate a {@link ts.Symbol} that corresponds to the provided {@link ReflectionSymbolId} in a given program.
- *
- * > [!NOTE]
- * > Currently, this resolution is implemented as a walk over the TS AST, as TypeDoc does not preserve information about non-exported `ReflectionSymbolId`s.
- * >
- * > There are some heuristics involved in this search, so it might not locate all possible symbols.
- */
-function resolveReflectionSymbolId(
-	target: ReflectionSymbolId,
-	program: ts.Program,
-): [symbol: ts.Symbol, declaration: ts.Node] {
-	if (target.fileName === undefined) throw new Error("missing file path :(");
-
-	const sourceFile = program.getSourceFile(target.fileName);
-	if (sourceFile === undefined) throw new Error("source file unknown :(");
-
-	let token = getTokenByStartPos(sourceFile, target.pos);
-
-	const checker = program.getTypeChecker();
-
-	let node: ts.Node | undefined = token;
-	while (node !== undefined) {
-		const symbolNode =
-			ts.isDeclarationStatement(node) ||
-			[
-				ts.SyntaxKind.VariableDeclaration,
-				ts.SyntaxKind.PropertyDeclaration,
-				ts.SyntaxKind.MethodDeclaration,
-			].includes(node.kind)
-				? (node as ts.NamedDeclaration).name
-				: undefined;
-
-		if (symbolNode !== undefined) {
-			const symbol = checker.getSymbolAtLocation(symbolNode);
-
-			if (symbol === undefined)
-				throw new Error("the located node does not seem to hold a symbol.");
-
-			const targetName = target.qualifiedName.split(".").at(-1)!;
-			if (symbol.name !== targetName)
-				throw new Error(
-					`the located symbol's name (\`${symbol.name}\`) doesn't match the expected one (\`${targetName}\`); the referenced symbol may be currently unsupported.`,
-				);
-
-			return [symbol, node];
-		}
-		node = node.parent;
-	}
-	throw new Error(
-		"failed to locate a symbol-holding node for the target token; the referenced symbol may be currently unsupported.",
-	);
-}
-
-function getTokenByStartPos(sourceFile: ts.SourceFile, pos: number): ts.Node {
-	let token: ts.Node = sourceFile;
-	while (!ts.isToken(token)) {
-		const nodeNext = token
-			.getChildren()
-			.find((ch) => ch.pos <= pos && pos < ch.end);
-
-		if (nodeNext === undefined)
-			throw new Error("there are no tokens at the requested position. :(");
-
-		token = nodeNext;
-	}
-
-	if (token.getStart() != pos)
-		throw new Error(
-			"the requested position does not point at a start of a token.",
-		);
-
-	return token;
 }
 
 function getOwningModule(context: Context): Reflection {
@@ -413,32 +296,6 @@ function getOwningModule(context: Context): Reflection {
 	return refl;
 }
 
-function getNodeOwningSymbol(
-	node: ts.Node,
-	checker: ts.TypeChecker,
-): ts.Symbol {
-	let ancestor: ts.Node | undefined = node.parent;
-	while (ancestor !== undefined) {
-		const symbolNode = ts.isDeclarationStatement(ancestor)
-			? ancestor.name
-			: ts.isSourceFile(ancestor)
-				? ancestor
-				: undefined;
-
-		if (symbolNode !== undefined) {
-			const sym = checker.getSymbolAtLocation(symbolNode);
-			if (sym === undefined)
-				throw new Error(
-					"the symbol node does not seem to have an associated symbol. this is a bug.",
-				);
-			return sym;
-		}
-
-		ancestor = ancestor.parent;
-	}
-	throw new Error("every node should have an owning `SourceFile`.");
-}
-
 function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
 	while (symbol.flags & ts.SymbolFlags.Alias) {
 		symbol = checker.getAliasedSymbol(symbol);
@@ -447,6 +304,17 @@ function shouldConvertSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
 	// We're looking at an unknown symbol which is declared in some package without
 	// type declarations. We know nothing about it, so don't convert it.
 	if (symbol.flags & ts.SymbolFlags.Transient) {
+		return false;
+	}
+
+	// #35 - Since TypeDoc#2978, TypeDoc will create symbol references which point to
+	// class methods. This previously wasn't an issue since references were set up directly
+	// upon resolution, but #2978 needs to use symbols to detect methods through inheritance.
+	// This somewhat breaks this plugin since we expect to be able to go through all created
+	// references and for them to be real missed values. It wasn't intentional that this
+	// plugin would lift class/interface symbols up out of the included classes; we'll just
+	// entirely ignore symbol references to methods here.
+	if (symbol.flags & ts.SymbolFlags.Method) {
 		return false;
 	}
 
