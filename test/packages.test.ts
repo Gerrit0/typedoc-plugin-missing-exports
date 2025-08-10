@@ -239,3 +239,16 @@ test("Disabling <internals> module but internalModule is set gives warning", () 
 		"Warn: [typedoc-plugin-missing-exports] Both placeInternalsInOwningModule and internalModule are set, the internalModule option will be ignored.",
 	);
 });
+
+test("Inherited symbols later fixed, #35", () => {
+	const project = convert("gh35/index.ts");
+
+	const hierarchy = outdent`
+		Module <internal>
+			Interface Parent2
+		Interface Child
+		Interface Parent
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+});

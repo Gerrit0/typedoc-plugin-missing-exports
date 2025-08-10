@@ -1,3 +1,7 @@
+### 4.0.1 (unreleased)
+
+- Plugin will no longer convert methods outside of their class, #35.
+
 ### 4.0.0 (2025-03-21)
 
 - BREAKING: Drop support for TypeDoc <0.28.1.

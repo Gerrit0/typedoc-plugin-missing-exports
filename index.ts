@@ -51,13 +51,26 @@ export function load(app: Application) {
 		context: Context,
 		program: ts.Program,
 	): Set<ts.Symbol> {
-		// An export is missing if if was referenced
-		// Is not contained in the documented
+		// An export is missing if it was referenced and
+		// is not contained in the documentation
 		const referenced = referencedSymbols.get(program) || new Set();
 		const ownedByOther = new Set<ts.Symbol>();
 		referencedSymbols.set(program, ownedByOther);
 
 		for (const s of [...referenced]) {
+
+			// #35 - Since TypeDoc#2978, TypeDoc will create symbol references which point to
+			// class methods. This previously wasn't an issue since references were set up directly
+			// upon resolution, but #2978 needs to use symbols to detect methods through inheritance.
+			// This somewhat breaks this plugin since we expect to be able to go through all created
+			// references and for them to be real missed values. It wasn't intentional that this
+			// plugin would lift class/interface symbols up out of the included classes; we'll just
+			// entirely ignore symbol references to methods here.
+			if (s.flags & ts.SymbolFlags.Method) {
+				referenced.delete(s);
+				continue;
+			}
+
 			if (context.getReflectionFromSymbol(s)) {
 				referenced.delete(s);
 			} else if (symbolToOwningModule.get(s) !== owningModule) {
