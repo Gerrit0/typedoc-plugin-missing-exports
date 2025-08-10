@@ -151,7 +151,7 @@ export function load(app: Application) {
 			);
 		}
 
-		if (app.options.getValue("includeDocCommentReferences") && parseFloat(Application.VERSION.slice(2)) < 28.9) {
+		if (app.options.getValue("includeDocCommentReferences") && Number(Application.VERSION.slice(5)) < 9) {
 			app.logger.warn(
 				`[typedoc-plugin-missing-exports] The includeDocCommentReferences option requires TypeDoc 0.28.9 or later.`,
 			);
