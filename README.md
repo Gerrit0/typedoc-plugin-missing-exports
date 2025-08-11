@@ -6,9 +6,14 @@ Automatically document symbols which aren't exported but are referenced.
 
 TypeDoc looks at each entry point provided and documents all exports from that entry point.
 
-For libraries which export their full exposed API, this works well, but some packages are extremely resistant to exporting everything. This plugin is for them. After TypeDoc has finished converting packages, it will look for types which are referenced, but not exported, and place them into an internal module for that entry point (called `<internal>` by default).
+For libraries which export their full exposed API, this works well, but some packages are extremely resistant to
+exporting everything. This plugin is for them. After TypeDoc has finished converting packages, it will look for types
+which are referenced, but not exported, and place them into an internal module for that entry point (called `<internal>`
+by default).
 
-If your project references classes which are built into the language (e.g. `HTMLElement`), this package _will_ result in those types being documented too. If you want to prevent this, set TypeDoc's `excludeExternals` option to `true`. The default pattern for determining if a symbol is external will exclude everything within `node_modules`.
+If your project references classes which are built into the language (e.g. `HTMLElement`), this package _will_ result in
+those types being documented too. If you want to prevent this, set TypeDoc's `excludeExternals` option to `true`. The
+default pattern for determining if a symbol is external will exclude everything within `node_modules`.
 
 ### Usage
 
@@ -17,11 +22,28 @@ npm install typedoc-plugin-missing-exports --save-dev
 npx typedoc --plugin typedoc-plugin-missing-exports
 ```
 
+Alternatively, configure via an options file:
+
+```json
+// typedoc.json
+{
+	"plugin": ["typedoc-plugin-missing-exports"]
+}
+```
+
 ### Options
 
-- `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into, defaults to `<internal>`.
+- `internalModule` - Define the name of the module that internal symbols which are not exported should be placed into,
+  defaults to `<internal>`.
 - `collapseInternalModule` - Include JS in the page to collapse all `<internal>` entries in the navigation on page load.
-- `placeInternalsInOwningModule` - Disable creating a module for internal symbols, and instead place them into the referencing module.
+- `placeInternalsInOwningModule` - Disable creating a module for internal symbols, and instead place them into the
+  referencing module.
+- `includeDocCommentReferences` - Also automatically add values linked within doc comments to the documentation. This
+  option requires that TypeDoc's
+  [`useTsLinkResolution`](https://typedoc.org/documents/Options.Comments.html#usetslinkresolution) option is enabled and
+  that JSDoc style comments are used. Link tags within TypeDoc's
+  [`excludeTags`](https://typedoc.org/documents/Options.Comments.html#excludetags) option will not be documented as they
+  will be removed from the documentation before rendering.
 
 ### Additional Reading
 

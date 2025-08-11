@@ -1,5 +1,6 @@
 ### 4.0.1 (unreleased)
 
+- Added `--includeDocCommentReferences` option, #33.
 - Plugin will no longer convert methods outside of their class, #35.
 
 ### 4.0.0 (2025-03-21)

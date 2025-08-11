@@ -237,8 +237,8 @@ test("Doc comment references with option enabled, #33", () => {
 			Class GreatnessFactoryFactoryBuilderAdapterSingleton
 			Type Alias SecretType
 			Type Alias SecretType2
+			Variable linkedInModuleComment
 			Variable myBasicSymbol
-			Variable mySecretSymbol
 			Variable myWorstSymbol
 			Function greatnessFactory
 		Variable myGreatSymbol

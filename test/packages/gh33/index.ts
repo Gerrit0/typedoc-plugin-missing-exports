@@ -3,8 +3,11 @@
  *
  * It serves as a test for the the following issue: https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/33.
  *
+ * {@link linkedInModuleComment}
+ *
  * @module
  */
+import "assert"; // Workaround https://github.com/TypeStrong/typedoc/issues/2994
 
 /**
  * Does what it says on the tin!
@@ -54,3 +57,5 @@ namespace ShamefullyHidden {
 	// must be exported, as only links resolvable by TS (i.e. what `useTsLinkResolution` does) are supported for now.
 	export const myWorstSymbol = greatnessFactory(-2);
 }
+
+const linkedInModuleComment = true;
