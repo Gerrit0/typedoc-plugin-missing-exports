@@ -72,7 +72,9 @@ beforeAll(async () => {
 
 afterEach(() => {
 	app.options.reset("internalModule");
+	app.options.reset("collapseInternalModule");
 	app.options.reset("placeInternalsInOwningModule");
+	app.options.reset("includeDocCommentReferences");
 	app.options.reset("basePath");
 
 	expect(logger.messages).toEqual([]);
@@ -211,6 +213,40 @@ test("Issue #22", () => {
 	expect(toStringHierarchy(project)).toBe(hierarchy);
 });
 
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/33
+test("Doc comment references with option disabled, #33", () => {
+	const project = convert("gh33/index.ts");
+
+	const hierarchy = outdent`
+		Variable myGreatSymbol
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+});
+
+// https://github.com/Gerrit0/typedoc-plugin-missing-exports/issues/33
+test("Doc comment references with option enabled, #33", () => {
+	app.options.setValue("includeDocCommentReferences", true);
+	const project = convert("gh33/index.ts");
+
+	// NOTE: `ShamefullyHidden` is deliberately not included,
+	// as this plugin does not (automatically) add exports to
+	// parents of referenced symbols.
+	const hierarchy = outdent`
+		Module <internal>
+			Class GreatnessFactoryFactoryBuilderAdapterSingleton
+			Type Alias SecretType
+			Type Alias SecretType2
+			Variable linkedInModuleComment
+			Variable myBasicSymbol
+			Variable myWorstSymbol
+			Function greatnessFactory
+		Variable myGreatSymbol
+	`;
+
+	expect(toStringHierarchy(project)).toBe(hierarchy);
+});
+
 test("Custom module name", () => {
 	app.options.setValue("internalModule", "internals");
 	const project = convert("single-missing-export/index.ts");
@@ -240,7 +276,7 @@ test("Disabling <internals> module but internalModule is set gives warning", () 
 	);
 });
 
-test("Inherited symbols later fixed, #35", () => {
+test("Inherited symbols created with method references, #35", () => {
 	const project = convert("gh35/index.ts");
 
 	const hierarchy = outdent`
