@@ -5,8 +5,8 @@ on:
             - main
 
 permissions:
-    id-token: write  # Required for OIDC
-    contents: read
+    id-token: write # Required for OIDC
+    contents: write # Required for git tag
 
 jobs:
     npm-publish:

@@ -1,3 +1,7 @@
+### 4.1.2 (2025-10-11)
+
+- No behavior changes, dealing with problems caused by trusted publishing migration.
+
 ### 4.1.1 (2025-10-11)
 
 - No behavior changes, migrated release workflow to use trusted publishing.
