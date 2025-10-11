@@ -26,6 +26,9 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: "20"
+            - name: Upgrade npm # Hack to deal with needing a new version for OIDC
+              if: steps.check.outputs.changed == 'true'
+              run: npm install -g npm@11
             - name: Install pnpm
               if: steps.check.outputs.changed == 'true'
               run: npm install -g pnpm@10
