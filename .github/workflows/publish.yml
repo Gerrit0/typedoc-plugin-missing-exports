@@ -3,6 +3,11 @@ on:
     push:
         branches:
             - main
+
+permissions:
+    id-token: write  # Required for OIDC
+    contents: read
+
 jobs:
     npm-publish:
         name: npm-publish
@@ -39,5 +44,3 @@ jobs:
                   pnpm publish
                   git tag v$(jq '.version' package.json -r)
                   git push --tags
-              env:
-                npm_config_//registry.npmjs.org/:_authToken: ${{ secrets.NPM_AUTH_TOKEN }}
