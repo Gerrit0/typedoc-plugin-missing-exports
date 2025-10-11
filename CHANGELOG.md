@@ -1,3 +1,7 @@
+### 4.1.1 (2025-10-11)
+
+- No behavior changes, migrated release workflow to use trusted publishing.
+
 ### 4.1.0 (2025-08-10)
 
 - Added `--includeDocCommentReferences` option, #33.
