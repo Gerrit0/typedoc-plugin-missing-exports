@@ -1,3 +1,7 @@
+### 4.1.3 (2026-04-03)
+
+- Detect and handle doubly-nested deferred converted symbols caused by `export default` symbols, #37.
+
 ### 4.1.2 (2025-10-11)
 
 - No behavior changes, dealing with problems caused by trusted publishing migration.

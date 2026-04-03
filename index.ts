@@ -263,23 +263,24 @@ export function load(app: Application) {
 				// an infinite loop when converting.
 				const tried = new Set<ts.Symbol>();
 
-				// Any re-exports will be deferred, so we need to allow deferred conversion here
-				// and finalize it after the loop.
-				app.converter.permitDeferredConversion();
 				do {
+					// Any re-exports will be deferred, so we need to allow deferred conversion here
+					// and finalize it after the loop. Do this for each pass to properly handle nested
+					// `export default` symbols which will be deferred, #37.
+					app.converter.permitDeferredConversion();
 					for (const s of missing) {
 						if (shouldConvertSymbol(s, context.checker)) {
 							internalContext.converter.convertSymbol(internalContext, s);
 						}
 						tried.add(s);
 					}
-
+					app.converter.finalizeDeferredConversion();
+					
 					missing = discoverMissingExports(mod, context, program);
 					for (const s of tried) {
 						missing.delete(s);
 					}
 				} while (missing.size > 0);
-				app.converter.finalizeDeferredConversion();
 
 				// If we added a module and all the missing symbols were excluded, get rid of our namespace.
 				if (
