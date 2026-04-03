@@ -275,7 +275,7 @@ export function load(app: Application) {
 						tried.add(s);
 					}
 					app.converter.finalizeDeferredConversion();
-					
+
 					missing = discoverMissingExports(mod, context, program);
 					for (const s of tried) {
 						missing.delete(s);
