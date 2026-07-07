@@ -245,6 +245,7 @@ export function load(app: Application) {
 				if (app.options.getValue("placeInternalsInOwningModule")) {
 					internalContext = context.withScope(mod);
 				} else {
+					app.converter.permitDeferredConversion();
 					const internalNs = context
 						.withScope(mod)
 						.createDeclarationReflection(
@@ -255,6 +256,7 @@ export function load(app: Application) {
 						);
 					internalNs[InternalModule] = true;
 					context.finalizeDeclarationReflection(internalNs);
+					app.converter.finalizeDeferredConversion();
 					internalContext = context.withScope(mod).withScope(internalNs);
 				}
 

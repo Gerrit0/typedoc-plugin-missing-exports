@@ -66,7 +66,7 @@ beforeAll(async () => {
 
 	program = ts.createProgram(
 		app.options.getFileNames(),
-		app.options.getCompilerOptions(),
+		app.options.getCompilerOptions(logger),
 	);
 });
 

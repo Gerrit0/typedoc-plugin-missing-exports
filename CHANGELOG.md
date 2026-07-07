@@ -1,3 +1,7 @@
+### 4.1.4 (2026-07-06)
+
+- Fix a compatibility issue preventing usage with `typedoc-plugin-zod`, gerrit0/typedoc-plugin-zod#13.
+
 ### 4.1.3 (2026-04-03)
 
 - Detect and handle doubly-nested deferred converted symbols caused by `export default` symbols, #37.
